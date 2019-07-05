@@ -1,0 +1,44 @@
+================================================================================
+Available Java Versions
+================================================================================
+ Vendor        | Use | Version      | Dist    | Status     | Identifier
+--------------------------------------------------------------------------------
+ AdoptOpenJDK  | >>> | 12.0.1.j9    | adpt    | installed  | 12.0.1.j9-adpt
+               |     | 12.0.1.hs    | adpt    |            | 12.0.1.hs-adpt
+               |     | 11.0.3.j9    | adpt    |            | 11.0.3.j9-adpt
+               |     | 11.0.3.hs    | adpt    |            | 11.0.3.hs-adpt
+               |     | 8.0.212.j9   | adpt    |            | 8.0.212.j9-adpt
+               |     | 8.0.212.hs   | adpt    |            | 8.0.212.hs-adpt
+ Amazon        |     | 11.0.3       | amzn    |            | 11.0.3-amzn
+               |     | 8.0.212      | amzn    |            | 8.0.212-amzn
+               |     | 8.0.202      | amzn    |            | 8.0.202-amzn
+ Azul Zulu     |     | 12.0.1       | zulu    |            | 12.0.1-zulu
+               |     | 11.0.3       | zulu    |            | 11.0.3-zulu
+               |     | 10.0.2       | zulu    |            | 10.0.2-zulu
+               |     | 9.0.7        | zulu    |            | 9.0.7-zulu
+               |     | 8.0.212      | zulu    |            | 8.0.212-zulu
+               |     | 8.0.202      | zulu    |            | 8.0.202-zulu
+               |     | 7.0.222      | zulu    |            | 7.0.222-zulu
+               |     | 7.0.181      | zulu    |            | 7.0.181-zulu
+ Azul ZuluFX   |     | 11.0.2       | zulufx  |            | 11.0.2-zulufx
+               |     | 8.0.202      | zulufx  |            | 8.0.202-zulufx
+ BellSoft      |     | 12.0.1       | librca  |            | 12.0.1-librca
+               |     | 11.0.3       | librca  |            | 11.0.3-librca
+               |     | 8.0.212      | librca  |            | 8.0.212-librca
+ GraalVM       |     | 19.1.0       | grl     |            | 19.1.0-grl
+               |     | 19.0.2       | grl     |            | 19.0.2-grl
+               |     | 19.0.0       | grl     |            | 19.0.0-grl
+               |     | 1.0.0        | grl     |            | 1.0.0-rc-16-grl
+ Java.net      |     | 14.ea.3      | open    |            | 14.ea.3-open
+               |     | 13.ea.27     | open    |            | 13.ea.27-open
+               |     | 12.0.1       | open    |            | 12.0.1-open
+               |     | 11.0.2       | open    |            | 11.0.2-open
+               |     | 10.0.2       | open    |            | 10.0.2-open
+               |     | 9.0.4        | open    |            | 9.0.4-open
+ SAP           |     | 12.0.1       | sapmchn |            | 12.0.1-sapmchn
+               |     | 11.0.3       | sapmchn |            | 11.0.3-sapmchn
+================================================================================
+Use the Identifier for installation:
+
+    $ sdk install java 11.0.3.hs-adpt
+================================================================================
