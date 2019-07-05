@@ -4,66 +4,32 @@ import shogun.sdk.SDK;
 import shogun.sdk.Version;
 
 import java.awt.*;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
 public class TaskTray {
 
-    private boolean blinking = false;
-    private List<Version> java;
+    boolean blinking = false;
+    private SDK sdk = new SDK();
+    private SystemTray tray;
+    private TrayIcon icon;
+    private PopupMenu popup = new PopupMenu();
 
     public void show() {
-        System.setProperty("apple.awt.UIElement", "true");
         Image duke64x64 = Toolkit.getDefaultToolkit().createImage(ClassLoader.getSystemResource("duke-64x64.png"));
         List<Image> animations = new ArrayList<>();
         animations.add(duke64x64);
         for (int i = 1; i < 12; i++) {
-            URL systemResource = ClassLoader.getSystemResource("duke-64x64-anim" + i + ".png");
-            System.out.println(i + ":" + systemResource);
-            Image image = Toolkit.getDefaultToolkit().createImage(systemResource);
+            Image image = Toolkit.getDefaultToolkit().createImage(ClassLoader.getSystemResource("duke-64x64-anim" + i + ".png"));
             animations.add(image);
         }
 
-
-
-        SDK sdk = new SDK();
-        String version = sdk.getVersion();
         try {
-            SystemTray tray = SystemTray.getSystemTray();
-            PopupMenu popup = new PopupMenu();
-            TrayIcon icon = new TrayIcon(duke64x64, "Shogun", popup);
+            tray = SystemTray.getSystemTray();
+            icon = new TrayIcon(duke64x64, "Shogun", popup);
             icon.setImageAutoSize(true);
 
-            java = sdk.list("java");
-
-            List<MenuItem> jdkMenuItems = new ArrayList<>();
-            for (Version jdk : java) {
-                MenuItem jdkItem = new MenuItem(toLabel(jdk));
-                jdkItem.addActionListener(e -> {
-                    blinking = true;
-                    sdk.makeDefault("java", jdk);
-                    java = sdk.list("java");
-                    for (int i = 0; i < jdkMenuItems.size(); i++) {
-                        MenuItem jdkMenuItem = jdkMenuItems.get(i);
-                        jdkMenuItem.setLabel(toLabel(java.get(i)));
-                    }
-                    blinking = false;
-
-                });
-                jdkMenuItems.add(jdkItem);
-                popup.add(jdkItem);
-            }
-
-            MenuItem versionLabel = new MenuItem(version);
-            versionLabel.setEnabled(false);
-            popup.add(versionLabel);
-            MenuItem item2 = new MenuItem("Exit");
-            item2.addActionListener(e -> {
-                tray.remove(icon);
-                System.exit(0);
-            });
-            popup.add(item2);
+            refreshItems();
 
             tray.add(icon);
 
@@ -100,12 +66,25 @@ public class TaskTray {
         }
     }
 
-    private static String toLabel(Version version) {
-        String label = version.isUse() ? "> " : "  ";
-        label += version.getIdentifier();
-        if (version.getStatus().length() != 0) {
-            label += "(" + version.getStatus() + ")";
+    void refreshItems() {
+        popup.removeAll();
+        String version = sdk.getVersion();
+        List<Version> jdkList = sdk.list("java");
+
+        for (Version jdk : jdkList) {
+            MenuItem jdkMenuItem = new JDKMenuItem(this, sdk, jdk);
+            popup.add(jdkMenuItem);
         }
-        return label;
+
+        MenuItem versionLabel = new MenuItem(version);
+        versionLabel.setEnabled(false);
+        popup.add(versionLabel);
+        MenuItem exitMenu = new MenuItem("Exit");
+        exitMenu.addActionListener(e -> {
+            tray.remove(icon);
+            System.exit(0);
+        });
+        popup.add(exitMenu);
     }
+
 }
