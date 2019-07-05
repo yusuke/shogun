@@ -6,6 +6,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class SDK {
@@ -20,7 +21,11 @@ public class SDK {
         return runSDK("version");
     }
 
-    List<Version> list(String candidate) {
+    public Optional<Version> getJDKinUse() {
+        return list("java").stream().filter(Version::isUse).findFirst();
+    }
+
+    public List<Version> list(String candidate) {
         return parseVersions(Arrays.asList(runSDK("list " + candidate).split("\n")));
     }
 
@@ -65,7 +70,8 @@ public class SDK {
 
     }
 
-    void use(Version version) {
+    public void makeDefault(String candidate, Version version) {
+        runSDK("default " + candidate + " " + version.getIdentifier());
     }
 
     private static String runSDK(String command) {

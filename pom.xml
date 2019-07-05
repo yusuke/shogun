@@ -41,8 +41,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <!--                    <mainClass>Shogun</mainClass>-->
-                    <mainClass>shogun.task.TaskTray</mainClass>
+                    <mainClass>Shogun</mainClass>
                 </configuration>
             </plugin>
             <plugin>

@@ -1,9 +1,6 @@
 package shogun.sdk;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 
 class SDKLauncher {
 
@@ -17,6 +14,11 @@ class SDKLauncher {
         try {
             ProcessBuilder pb = new ProcessBuilder(command);
             Process process = pb.start();
+            OutputStream outputStream = process.getOutputStream();
+            PrintWriter printWriter = new PrintWriter(outputStream);
+            // say yes
+            printWriter.write("y\n");
+            printWriter.flush();
             process.waitFor();
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             redirectStream(process.getInputStream(), baos);
@@ -31,6 +33,7 @@ class SDKLauncher {
         int c;
         try (InputStream is = from) {
             while ((c = is.read()) != -1) {
+                System.out.write(c);
                 to.write(c);
             }
         }
