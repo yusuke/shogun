@@ -9,12 +9,14 @@ import java.util.List;
 
 public class TaskTray {
 
-    boolean blinking = false;
+    private boolean blinking = false;
     private SDK sdk = new SDK();
     private SystemTray tray;
     private TrayIcon icon;
     private PopupMenu popup = new PopupMenu();
+    private List<Version> jdkList;
 
+    private Version lastDefaultJDK;
     public void show() {
         List<Image> animatedDuke = new ArrayList<>();
         for (int i = 0; i < 12; i++) {
@@ -64,13 +66,16 @@ public class TaskTray {
         }
     }
 
-    void refreshItems() {
+    private void refreshItems() {
         popup.removeAll();
         String version = sdk.getVersion();
-        List<Version> jdkList = sdk.list("java");
-
+        jdkList = sdk.list("java");
         for (Version jdk : jdkList) {
-            MenuItem jdkMenuItem = new JDKMenuItem(this, sdk, jdk);
+            if (jdk.isUse()) {
+                lastDefaultJDK = jdk;
+            }
+            MenuItem jdkMenuItem = new MenuItem(toLabel(jdk));
+            jdkMenuItem.addActionListener(e -> setDefault(jdk));
             popup.add(jdkMenuItem);
         }
 
@@ -83,6 +88,31 @@ public class TaskTray {
             System.exit(0);
         });
         popup.add(exitMenu);
+    }
+
+    private static String toLabel(Version version) {
+        String label = version.isUse() ? "> " : "  ";
+        label += version.getIdentifier();
+        if (version.getStatus().length() != 0) {
+            label += "(" + version.getStatus() + ")";
+        }
+        return label;
+    }
+
+    private void setDefault(Version newJDK) {
+        blinking = true;
+        sdk.makeDefault("java", newJDK);
+
+        // set last default jdk inactive
+        lastDefaultJDK.setUse(false);
+        popup.getItem(jdkList.indexOf(lastDefaultJDK)).setLabel(toLabel(lastDefaultJDK));
+
+        // set new jdk active
+        newJDK.setUse(true);
+        popup.getItem(jdkList.indexOf(newJDK)).setLabel(toLabel(newJDK));
+
+        lastDefaultJDK = newJDK;
+        blinking = false;
     }
 
 }
