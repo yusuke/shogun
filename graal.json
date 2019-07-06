@@ -1,0 +1,11 @@
+[
+  {
+    "name": "java.awt.EventQueue",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ]
+  }
+]

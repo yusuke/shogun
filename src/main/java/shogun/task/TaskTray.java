@@ -16,17 +16,15 @@ public class TaskTray {
     private PopupMenu popup = new PopupMenu();
 
     public void show() {
-        Image duke64x64 = Toolkit.getDefaultToolkit().createImage(ClassLoader.getSystemResource("duke-64x64.png"));
-        List<Image> animations = new ArrayList<>();
-        animations.add(duke64x64);
-        for (int i = 1; i < 12; i++) {
+        List<Image> animatedDuke = new ArrayList<>();
+        for (int i = 0; i < 12; i++) {
             Image image = Toolkit.getDefaultToolkit().createImage(ClassLoader.getSystemResource("duke-64x64-anim" + i + ".png"));
-            animations.add(image);
+            animatedDuke.add(image);
         }
 
         try {
             tray = SystemTray.getSystemTray();
-            icon = new TrayIcon(duke64x64, "Shogun", popup);
+            icon = new TrayIcon(animatedDuke.get(0), "Shogun", popup);
             icon.setImageAutoSize(true);
 
             refreshItems();
@@ -36,7 +34,7 @@ public class TaskTray {
             Thread thread = new Thread(() -> {
                 while (true) {
                     while (blinking) {
-                        for (Image animation : animations) {
+                        for (Image animation : animatedDuke) {
                             icon.setImage(animation);
                             try {
                                 Thread.sleep(100);
@@ -49,7 +47,7 @@ public class TaskTray {
                         }
                     }
                     while (!blinking) {
-                        icon.setImage(duke64x64);
+                        icon.setImage(animatedDuke.get(0));
                         try {
                             Thread.sleep(1000);
                         } catch (InterruptedException e) {
