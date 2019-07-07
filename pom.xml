@@ -27,22 +27,48 @@
 
     <build>
         <plugins>
-
             <plugin>
-                <groupId>com.oracle.substratevm</groupId>
-                <artifactId>native-image-maven-plugin</artifactId>
-                <version>19.0.2</version>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.6.0</version>
                 <executions>
                     <execution>
-                        <goals>
-                            <goal>native-image</goal>
-                        </goals>
+                        <id>create-package</id>
                         <phase>package</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>${project.basedir}/jdk.packager-osx/jpackager</executable>
+                            <workingDirectory>${project.build.directory}</workingDirectory>
+                            <longModulepath>false</longModulepath>
+                            <environmentVariables>
+                                <JAVA_HOME>${java.home}</JAVA_HOME>
+                            </environmentVariables>
+                            <arguments>
+                                <argument>create-image</argument>
+                                <argument>--verbose</argument>
+                                <argument>--echo-mode</argument>
+                                <argument>--input</argument>
+                                <argument>${project.build.directory}/</argument>
+                                <argument>--class</argument>
+                                <argument>Shogun</argument>
+                                <argument>--main-jar</argument>
+                                <argument>./${project.artifactId}-${project.version}.jar</argument>
+                                <argument>--output</argument>
+                                <argument>./</argument>
+                                <argument>--singleton</argument>
+                                <argument>--identifier</argument>
+                                <argument>com.samuraism.Shogun</argument>
+                                <argument>--name</argument>
+                                <argument>Shogun</argument>
+                                <argument>--add-modules</argument>
+                                <argument>java.base,java.desktop</argument>
+                                <argument>--strip-native-commands</argument>
+                            </arguments>
+                        </configuration>
                     </execution>
                 </executions>
-                <configuration>
-                    <mainClass>Shogun</mainClass>
-                </configuration>
             </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
