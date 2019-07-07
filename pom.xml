@@ -6,7 +6,7 @@
 
     <groupId>shogun</groupId>
     <artifactId>shogun</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>0.1</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -39,7 +39,7 @@
                             <goal>exec</goal>
                         </goals>
                         <configuration>
-                            <executable>${project.basedir}/jdk.packager-osx/jpackager</executable>
+                            <executable>${project.basedir}/jdk.packager/jpackager</executable>
                             <workingDirectory>${project.build.directory}</workingDirectory>
                             <longModulepath>false</longModulepath>
                             <environmentVariables>
@@ -49,6 +49,10 @@
                                 <argument>create-image</argument>
                                 <argument>--verbose</argument>
                                 <argument>--echo-mode</argument>
+                                <argument>--jvm-args</argument>
+                                <argument>-Xmx6m -Xms6m</argument>
+                                <argument>--icon</argument>
+                                <argument>${project.basedir}/Shogun.icns</argument>
                                 <argument>--input</argument>
                                 <argument>${project.build.directory}/</argument>
                                 <argument>--class</argument>
