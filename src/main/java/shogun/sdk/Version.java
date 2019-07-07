@@ -1,5 +1,8 @@
 package shogun.sdk;
 
+import java.io.File;
+import java.io.IOException;
+
 public final class Version {
     private String vendor;
     private boolean use;
@@ -32,7 +35,7 @@ public final class Version {
         return version;
     }
 
-    public String getDist() {
+    String getDist() {
         return dist;
     }
 
@@ -40,7 +43,15 @@ public final class Version {
         return status;
     }
 
-    public String getIdentifier() {
+    public void setStatus(String newStatus) {
+        this.status = newStatus;
+    }
+
+    public boolean isInstalled() {
+        return status.equals("installed");
+    }
+
+    String getIdentifier() {
         return identifier;
     }
 
@@ -76,5 +87,16 @@ public final class Version {
                 ", status='" + status + '\'' +
                 ", identifier='" + identifier + '\'' +
                 '}';
+    }
+
+    public void revealInFinder() {
+        ProcessBuilder pb = new ProcessBuilder("open", SDK.SDK_MAN_DIR + File.separator + "candidates" + File.separator + "java" + File.separator + identifier);
+        try {
+            Process process = pb.start();
+            process.waitFor();
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
+
     }
 }

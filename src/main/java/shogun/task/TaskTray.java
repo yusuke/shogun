@@ -17,6 +17,7 @@ public class TaskTray {
     private List<Version> jdkList;
 
     private Version lastDefaultJDK;
+
     public void show() {
         List<Image> animatedDuke = new ArrayList<>();
         for (int i = 0; i < 12; i++) {
@@ -74,8 +75,8 @@ public class TaskTray {
             if (jdk.isUse()) {
                 lastDefaultJDK = jdk;
             }
-            MenuItem jdkMenuItem = new MenuItem(toLabel(jdk));
-            jdkMenuItem.addActionListener(e -> setDefault(jdk));
+            Menu jdkMenuItem = new Menu(toLabel(jdk));
+            updateMenu(jdkMenuItem, jdk);
             popup.add(jdkMenuItem);
         }
 
@@ -90,9 +91,39 @@ public class TaskTray {
         popup.add(exitMenu);
     }
 
+    private void updateMenu(Menu menu, Version jdk) {
+        menu.setLabel(toLabel(jdk));
+        menu.removeAll();
+        if (jdk.isInstalled() && !jdk.isUse()) {
+            MenuItem menuItem = new MenuItem("Make default");
+            menuItem.addActionListener(e -> setDefault(jdk));
+            menu.add(menuItem);
+        }
+        if (jdk.isInstalled()) {
+            MenuItem menuItem = new MenuItem("Uninstall");
+            menuItem.addActionListener(e -> uninstall(jdk));
+            menu.add(menuItem);
+        }
+        if (jdk.isInstalled()) {
+            MenuItem menuItem = new MenuItem("Reveal in Finder");
+            menuItem.addActionListener(e -> revealInFinder(jdk));
+            menu.add(menuItem);
+        }
+        if (!jdk.isInstalled()) {
+            MenuItem menuItem = new MenuItem("Install");
+            menuItem.addActionListener(e -> install(jdk));
+            menu.add(menuItem);
+        }
+    }
+
+    private void revealInFinder(Version jdk) {
+        jdk.revealInFinder();
+
+    }
+
     private static String toLabel(Version version) {
-        String label = version.isUse() ? "> " : "  ";
-        label += version.getIdentifier();
+        String label = version.isUse() ? ">" : "  ";
+        label += version.getVendor() + " " + version.getVersion();
         if (version.getStatus().length() != 0) {
             label += "(" + version.getStatus() + ")";
         }
@@ -104,14 +135,42 @@ public class TaskTray {
         sdk.makeDefault("java", newJDK);
 
         // set last default jdk inactive
-        lastDefaultJDK.setUse(false);
-        popup.getItem(jdkList.indexOf(lastDefaultJDK)).setLabel(toLabel(lastDefaultJDK));
+        if (lastDefaultJDK != null) {
+            lastDefaultJDK.setUse(false);
+            updateMenu((Menu) popup.getItem(jdkList.indexOf(lastDefaultJDK)), lastDefaultJDK);
+        }
 
         // set new jdk active
         newJDK.setUse(true);
-        popup.getItem(jdkList.indexOf(newJDK)).setLabel(toLabel(newJDK));
+        updateMenu((Menu) popup.getItem(jdkList.indexOf(newJDK)), newJDK);
 
         lastDefaultJDK = newJDK;
+        blinking = false;
+    }
+
+    private void install(Version newJDK) {
+        blinking = true;
+        sdk.install("java", newJDK);
+
+        // set new jdk installed
+        newJDK.setStatus("installed");
+        updateMenu((Menu) popup.getItem(jdkList.indexOf(newJDK)), newJDK);
+
+        blinking = false;
+    }
+
+    private void uninstall(Version newJDK) {
+        blinking = true;
+        sdk.uninstall("java", newJDK);
+        if (lastDefaultJDK != null && lastDefaultJDK.equals(newJDK)) {
+            lastDefaultJDK.setUse(false);
+            lastDefaultJDK = null;
+        }
+
+        // set new jdk installed
+        newJDK.setStatus("");
+        updateMenu((Menu) popup.getItem(jdkList.indexOf(newJDK)), newJDK);
+
         blinking = false;
     }
 

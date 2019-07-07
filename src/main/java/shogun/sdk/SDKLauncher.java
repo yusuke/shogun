@@ -14,7 +14,7 @@ class SDKLauncher {
 
         try {
             File tempFile = File.createTempFile("sdk", "log");
-            command[command.length - 1] = command[command.length - 1] + ">" + tempFile.getAbsolutePath() + " 2>&1";
+            command[command.length - 1] = command[command.length - 1] + " >" + tempFile.getAbsolutePath() + " 2>&1";
             ProcessBuilder pb = new ProcessBuilder(command);
             Process process = pb.start();
             OutputStream outputStream = process.getOutputStream();

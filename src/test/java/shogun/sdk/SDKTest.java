@@ -44,13 +44,13 @@ class SDKTest {
                     List<Version> newSDKs = sdk.list("java");
                     Optional<Version> installed = newSDKs.stream().filter(e2 -> e2.getIdentifier().equals(e.getIdentifier())).findFirst();
                     assertTrue(installed.isPresent());
-                    assertEquals("installed", installed.get().getStatus());
+            assertTrue(installed.get().isInstalled());
                     // uninstall the sdk
                     sdk.uninstall("java", e);
                     List<Version> uninstalledSDK = sdk.list("java");
                     Optional<Version> uninstalled = uninstalledSDK.stream().filter(e2 -> e2.getIdentifier().equals(e.getIdentifier())).findFirst();
                     assertTrue(uninstalled.isPresent());
-                    assertEquals("", uninstalled.get().getStatus());
+            assertFalse(installed.get().isInstalled());
                 }
         );
     }
