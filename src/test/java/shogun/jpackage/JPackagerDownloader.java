@@ -1,4 +1,4 @@
-package shogun.sdk;
+package shogun.jpackage;
 
 import org.junit.jupiter.api.Test;
 
