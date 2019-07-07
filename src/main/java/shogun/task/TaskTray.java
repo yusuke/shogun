@@ -83,12 +83,12 @@ public class TaskTray {
         MenuItem versionLabel = new MenuItem(version);
         versionLabel.setEnabled(false);
         popup.add(versionLabel);
-        MenuItem exitMenu = new MenuItem("Exit");
-        exitMenu.addActionListener(e -> {
+        MenuItem quitMenu = new MenuItem("Quit");
+        quitMenu.addActionListener(e -> {
             tray.remove(icon);
             System.exit(0);
         });
-        popup.add(exitMenu);
+        popup.add(quitMenu);
     }
 
     private void updateMenu(Menu menu, Version jdk) {
