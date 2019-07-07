@@ -11,7 +11,10 @@ class SDKLauncher {
      * @return output
      */
     static String exec(String... command) {
+
         try {
+            File tempFile = File.createTempFile("sdk", "log");
+            command[command.length - 1] = command[command.length - 1] + ">" + tempFile.getAbsolutePath() + " 2>&1";
             ProcessBuilder pb = new ProcessBuilder(command);
             Process process = pb.start();
             OutputStream outputStream = process.getOutputStream();
@@ -22,6 +25,7 @@ class SDKLauncher {
             process.waitFor();
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             redirectStream(process.getInputStream(), baos);
+            redirectStream(new FileInputStream(tempFile), baos);
             redirectStream(process.getErrorStream(), baos);
             return trimANSIEscapeCodes(baos.toString());
         } catch (IOException | InterruptedException e) {

@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -30,6 +31,28 @@ class SDKTest {
         assertTrue(30 < versions.size());
 //        List<Version> groovyVersions = sdk.list("groovy");
 //        assertTrue(30 < groovyVersions.size());
+    }
+
+    @Test
+    void installUninstall() {
+        SDK sdk = new SDK();
+        List<Version> java = sdk.list("java");
+        Optional<Version> notInstalled = java.stream().filter(e -> !e.getStatus().equals("installed")).findFirst();
+        notInstalled.ifPresent(e -> {
+                    // install the sdk
+                    sdk.install("java", e);
+                    List<Version> newSDKs = sdk.list("java");
+                    Optional<Version> installed = newSDKs.stream().filter(e2 -> e2.getIdentifier().equals(e.getIdentifier())).findFirst();
+                    assertTrue(installed.isPresent());
+                    assertEquals("installed", installed.get().getStatus());
+                    // uninstall the sdk
+                    sdk.uninstall("java", e);
+                    List<Version> uninstalledSDK = sdk.list("java");
+                    Optional<Version> uninstalled = uninstalledSDK.stream().filter(e2 -> e2.getIdentifier().equals(e.getIdentifier())).findFirst();
+                    assertTrue(uninstalled.isPresent());
+                    assertEquals("", uninstalled.get().getStatus());
+                }
+        );
     }
 
     @Test

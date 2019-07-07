@@ -61,13 +61,16 @@ public class SDK {
         return versionList;
     }
 
-    void install(Version version) {
-
-
+    void install(String candidate, Version version) {
+        install(candidate, version.getIdentifier());
     }
 
-    void uninstall(Version version) {
+    void install(String candidate, String identifier) {
+        runSDK("install " + candidate + " " + identifier);
+    }
 
+    void uninstall(String candidate, Version version) {
+        runSDK("uninstall " + candidate + " " + version.getIdentifier());
     }
 
     public void makeDefault(String candidate, Version version) {
