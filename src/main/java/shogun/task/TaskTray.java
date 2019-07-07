@@ -38,7 +38,7 @@ public class TaskTray {
                 while (true) {
                     while (blinking) {
                         for (Image animation : animatedDuke) {
-                            icon.setImage(animation);
+                            EventQueue.invokeLater(() -> icon.setImage(animation));
                             try {
                                 Thread.sleep(100);
                             } catch (InterruptedException e) {
@@ -50,7 +50,7 @@ public class TaskTray {
                         }
                     }
                     while (!blinking) {
-                        icon.setImage(animatedDuke.get(0));
+                        EventQueue.invokeLater(() -> icon.setImage(animatedDuke.get(0)));
                         try {
                             Thread.sleep(1000);
                         } catch (InterruptedException e) {
@@ -69,26 +69,41 @@ public class TaskTray {
 
     private void refreshItems() {
         popup.removeAll();
-        String version = sdk.getVersion();
-        jdkList = sdk.list("java");
-        for (Version jdk : jdkList) {
-            if (jdk.isUse()) {
-                lastDefaultJDK = jdk;
+        if (sdk.isInstalled()) {
+            String version = sdk.getVersion();
+            jdkList = sdk.list("java");
+            for (Version jdk : jdkList) {
+                if (jdk.isUse()) {
+                    lastDefaultJDK = jdk;
+                }
+                Menu jdkMenuItem = new Menu(toLabel(jdk));
+                updateMenu(jdkMenuItem, jdk);
+                popup.add(jdkMenuItem);
             }
-            Menu jdkMenuItem = new Menu(toLabel(jdk));
-            updateMenu(jdkMenuItem, jdk);
-            popup.add(jdkMenuItem);
+
+            MenuItem versionLabel = new MenuItem(version);
+            versionLabel.setEnabled(false);
+            popup.add(versionLabel);
+        } else {
+            MenuItem installMenu = new MenuItem("Install SDKMAN!");
+            installMenu.addActionListener(e -> installSDKMAN());
+            popup.add(installMenu);
         }
 
-        MenuItem versionLabel = new MenuItem(version);
-        versionLabel.setEnabled(false);
-        popup.add(versionLabel);
+
         MenuItem quitMenu = new MenuItem("Quit");
         quitMenu.addActionListener(e -> {
             tray.remove(icon);
             System.exit(0);
         });
         popup.add(quitMenu);
+    }
+
+    private void installSDKMAN() {
+        blinking = true;
+        sdk.install();
+        refreshItems();
+        blinking = false;
     }
 
     private void updateMenu(Menu menu, Version jdk) {

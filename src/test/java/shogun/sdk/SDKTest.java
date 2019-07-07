@@ -24,6 +24,21 @@ class SDKTest {
     }
 
     @Test
+    void install() {
+        SDK sdk = new SDK();
+        if (!sdk.isInstalled()) {
+            String result = sdk.install();
+            assertTrue(result.contains("Enjoy!!!"));
+            assertTrue(sdk.isInstalled());
+            try {
+                sdk.install();
+                fail("should throw IllegalStateException");
+            } catch (IllegalStateException ignore) {
+            }
+        }
+    }
+
+    @Test
     void list() {
         SDK sdk = new SDK();
         assumeTrue(sdk.isInstalled());
@@ -50,7 +65,7 @@ class SDKTest {
                     List<Version> uninstalledSDK = sdk.list("java");
                     Optional<Version> uninstalled = uninstalledSDK.stream().filter(e2 -> e2.getIdentifier().equals(e.getIdentifier())).findFirst();
                     assertTrue(uninstalled.isPresent());
-            assertFalse(installed.get().isInstalled());
+            assertFalse(uninstalled.get().isInstalled());
                 }
         );
     }
@@ -130,5 +145,13 @@ class SDKTest {
         // SDKMAN X.Y.Z+nnn
         String version = sdk.getVersion();
         assertTrue(version.endsWith(versionFullString));
+    }
+
+    @Test
+    void versionFirst() throws URISyntaxException, IOException {
+        // test version description with broadcast message can be parsed.
+        List<String> parsedVersion = Files.readAllLines(Paths.get(SDKTest.class.getResource("/shogun/version-first.txt").toURI()));
+        String version = SDK.parseSDKVersion(parsedVersion.toArray(new String[]{}));
+        assertEquals("SDKMAN 5.7.3+337", version);
     }
 }

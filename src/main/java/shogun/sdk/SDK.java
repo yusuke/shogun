@@ -13,12 +13,23 @@ public class SDK {
 
     static final String SDK_MAN_DIR = System.getProperty("user.home") + File.separator + ".sdkman";
 
-    boolean isInstalled() {
+    public boolean isInstalled() {
         return Files.exists(Paths.get(SDK_MAN_DIR + File.separator + "bin" + File.separator + "sdkman-init.sh"));
     }
 
+    public String install() {
+        if (isInstalled()) {
+            throw new IllegalStateException("SDKMAN! already installed.");
+        }
+        return SDKLauncher.exec("bash", "-c", "curl -s \"https://get.sdkman.io\" | bash").trim();
+    }
+
     public String getVersion() {
-        return runSDK("version");
+        return parseSDKVersion(runSDK("version").split("\n"));
+    }
+
+    static String parseSDKVersion(String[] versionString) {
+        return versionString[versionString.length - 1];
     }
 
     public Optional<Version> getJDKinUse() {
