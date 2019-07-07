@@ -19,7 +19,7 @@ public final class Version {
         this.identifier = identifier;
     }
 
-    public String getVendor() {
+    String getVendor() {
         return vendor;
     }
 
@@ -31,7 +31,7 @@ public final class Version {
         this.use = use;
     }
 
-    public String getVersion() {
+    String getVersion() {
         return version;
     }
 
@@ -79,14 +79,7 @@ public final class Version {
 
     @Override
     public String toString() {
-        return "Candidate{" +
-                "vendor='" + vendor + '\'' +
-                ", use=" + use +
-                ", version='" + version + '\'' +
-                ", dist='" + dist + '\'' +
-                ", status='" + status + '\'' +
-                ", identifier='" + identifier + '\'' +
-                '}';
+        return vendor + " " + version;
     }
 
     public void revealInFinder() {

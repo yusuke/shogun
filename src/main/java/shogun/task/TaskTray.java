@@ -3,11 +3,15 @@ package shogun.task;
 import shogun.sdk.SDK;
 import shogun.sdk.Version;
 
+import javax.swing.*;
 import java.awt.*;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
+
+import static javax.swing.JOptionPane.QUESTION_MESSAGE;
 
 public class TaskTray {
     private ResourceBundle bundle = ResourceBundle.getBundle("message", Locale.getDefault());
@@ -18,10 +22,14 @@ public class TaskTray {
     private TrayIcon icon;
     private PopupMenu popup = new PopupMenu();
     private List<Version> jdkList;
+    private final JFrame thisFrameMakesDialogsAlwaysOnTop = new JFrame();
 
+    private ImageIcon dialogIcon = new ImageIcon(Toolkit.getDefaultToolkit().createImage(ClassLoader.getSystemResource("images/duke-128x128.png")));
     private Version lastDefaultJDK;
 
     public void show() {
+        thisFrameMakesDialogsAlwaysOnTop.setAlwaysOnTop(true);
+
         List<Image> animatedDuke = new ArrayList<>();
         for (int i = 0; i < 12; i++) {
             Image image = Toolkit.getDefaultToolkit().createImage(ClassLoader.getSystemResource("images/duke-64x64-anim" + i + ".png"));
@@ -118,11 +126,6 @@ public class TaskTray {
             menu.add(menuItem);
         }
         if (jdk.isInstalled()) {
-            MenuItem menuItem = new MenuItem(bundle.getString("uninstall"));
-            menuItem.addActionListener(e -> uninstall(jdk));
-            menu.add(menuItem);
-        }
-        if (jdk.isInstalled()) {
             MenuItem menuItem = new MenuItem(bundle.getString("revealInFinder"));
             menuItem.addActionListener(e -> revealInFinder(jdk));
             menu.add(menuItem);
@@ -130,6 +133,11 @@ public class TaskTray {
         if (!jdk.isInstalled()) {
             MenuItem menuItem = new MenuItem(bundle.getString("install"));
             menuItem.addActionListener(e -> install(jdk));
+            menu.add(menuItem);
+        }
+        if (jdk.isInstalled()) {
+            MenuItem menuItem = new MenuItem(bundle.getString("uninstall"));
+            menuItem.addActionListener(e -> uninstall(jdk));
             menu.add(menuItem);
         }
     }
@@ -141,7 +149,7 @@ public class TaskTray {
 
     private static String toLabel(Version version) {
         String label = version.isUse() ? ">" : "  ";
-        label += version.getVendor() + " " + version.getVersion();
+        label += version.toString();
         if (version.getStatus().length() != 0) {
             label += "(" + version.getStatus() + ")";
         }
@@ -166,29 +174,46 @@ public class TaskTray {
         blinking = false;
     }
 
+    private String getMessage(String pattern, String... values) {
+        MessageFormat formatter = new MessageFormat(bundle.getString(pattern));
+        return formatter.format(values);
+    }
+
     private void install(Version newJDK) {
         blinking = true;
-        sdk.install("java", newJDK);
+        int response = JOptionPane.showConfirmDialog(thisFrameMakesDialogsAlwaysOnTop,
+                getMessage("confirmInstallMessage", newJDK.toString()),
+                getMessage("confirmInstallTitle", newJDK.toString()), JOptionPane.OK_CANCEL_OPTION,
+                QUESTION_MESSAGE, dialogIcon);
+        if (response == JOptionPane.OK_OPTION) {
+            sdk.install("java", newJDK);
 
-        // set new jdk installed
-        newJDK.setStatus("installed");
-        updateMenu((Menu) popup.getItem(jdkList.indexOf(newJDK)), newJDK);
+            // set new jdk installed
+            newJDK.setStatus("installed");
+            updateMenu((Menu) popup.getItem(jdkList.indexOf(newJDK)), newJDK);
+        }
 
         blinking = false;
     }
 
-    private void uninstall(Version newJDK) {
+
+    private void uninstall(Version jdkToBeUninstalled) {
         blinking = true;
-        sdk.uninstall("java", newJDK);
-        if (lastDefaultJDK != null && lastDefaultJDK.equals(newJDK)) {
-            lastDefaultJDK.setUse(false);
-            lastDefaultJDK = null;
+        int response = JOptionPane.showConfirmDialog(thisFrameMakesDialogsAlwaysOnTop,
+                getMessage("confirmUninstallMessage", jdkToBeUninstalled.toString()),
+                getMessage("confirmUninstallTitle", jdkToBeUninstalled.toString()), JOptionPane.OK_CANCEL_OPTION,
+                QUESTION_MESSAGE, dialogIcon);
+        if (response == JOptionPane.OK_OPTION) {
+            sdk.uninstall("java", jdkToBeUninstalled);
+            if (lastDefaultJDK != null && lastDefaultJDK.equals(jdkToBeUninstalled)) {
+                lastDefaultJDK.setUse(false);
+                lastDefaultJDK = null;
+            }
+
+            // set new jdk installed
+            jdkToBeUninstalled.setStatus("");
+            updateMenu((Menu) popup.getItem(jdkList.indexOf(jdkToBeUninstalled)), jdkToBeUninstalled);
         }
-
-        // set new jdk installed
-        newJDK.setStatus("");
-        updateMenu((Menu) popup.getItem(jdkList.indexOf(newJDK)), newJDK);
-
         blinking = false;
     }
 
