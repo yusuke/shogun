@@ -13,11 +13,12 @@ Download the latest binary from the [release page](https://github.com/yusuke/sho
  
 ## What does it offer?
 Currently you can:
- - see the list of available Java distributions
- - choose to make a specified distribution / version the default
- - install / uninstall JDK
+ - See the list of available Java distributions
+ - Choose to make a specified distribution / version the default
+ - Install or uninstall JDK
  - Reveal the specified JDK Home in Finder
   from OS Task tray.
   
 ## How to Build 
- `$ mvn clean package`
+Java 11 is required to build Shogun. To build Shogun, have Java 11 installed on your mac, and run `$ mvn clean package`
+Shogun.app will be located at target/.
