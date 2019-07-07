@@ -6,8 +6,11 @@ import shogun.sdk.Version;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.ResourceBundle;
 
 public class TaskTray {
+    private ResourceBundle bundle = ResourceBundle.getBundle("message", Locale.getDefault());
 
     private boolean blinking = false;
     private SDK sdk = new SDK();
@@ -21,7 +24,7 @@ public class TaskTray {
     public void show() {
         List<Image> animatedDuke = new ArrayList<>();
         for (int i = 0; i < 12; i++) {
-            Image image = Toolkit.getDefaultToolkit().createImage(ClassLoader.getSystemResource("duke-64x64-anim" + i + ".png"));
+            Image image = Toolkit.getDefaultToolkit().createImage(ClassLoader.getSystemResource("images/duke-64x64-anim" + i + ".png"));
             animatedDuke.add(image);
         }
 
@@ -38,7 +41,7 @@ public class TaskTray {
                 while (true) {
                     while (blinking) {
                         for (Image animation : animatedDuke) {
-                            EventQueue.invokeLater(() -> icon.setImage(animation));
+                            icon.setImage(animation);
                             try {
                                 Thread.sleep(100);
                             } catch (InterruptedException e) {
@@ -50,7 +53,7 @@ public class TaskTray {
                         }
                     }
                     while (!blinking) {
-                        EventQueue.invokeLater(() -> icon.setImage(animatedDuke.get(0)));
+                        icon.setImage(animatedDuke.get(0));
                         try {
                             Thread.sleep(1000);
                         } catch (InterruptedException e) {
@@ -85,13 +88,13 @@ public class TaskTray {
             versionLabel.setEnabled(false);
             popup.add(versionLabel);
         } else {
-            MenuItem installMenu = new MenuItem("Install SDKMAN!");
+            MenuItem installMenu = new MenuItem(bundle.getString("installSDKMan"));
             installMenu.addActionListener(e -> installSDKMAN());
             popup.add(installMenu);
         }
 
 
-        MenuItem quitMenu = new MenuItem("Quit");
+        MenuItem quitMenu = new MenuItem(bundle.getString("quit"));
         quitMenu.addActionListener(e -> {
             tray.remove(icon);
             System.exit(0);
@@ -110,22 +113,22 @@ public class TaskTray {
         menu.setLabel(toLabel(jdk));
         menu.removeAll();
         if (jdk.isInstalled() && !jdk.isUse()) {
-            MenuItem menuItem = new MenuItem("Make default");
+            MenuItem menuItem = new MenuItem(bundle.getString("makeDefault"));
             menuItem.addActionListener(e -> setDefault(jdk));
             menu.add(menuItem);
         }
         if (jdk.isInstalled()) {
-            MenuItem menuItem = new MenuItem("Uninstall");
+            MenuItem menuItem = new MenuItem(bundle.getString("uninstall"));
             menuItem.addActionListener(e -> uninstall(jdk));
             menu.add(menuItem);
         }
         if (jdk.isInstalled()) {
-            MenuItem menuItem = new MenuItem("Reveal in Finder");
+            MenuItem menuItem = new MenuItem(bundle.getString("revealInFinder"));
             menuItem.addActionListener(e -> revealInFinder(jdk));
             menu.add(menuItem);
         }
         if (!jdk.isInstalled()) {
-            MenuItem menuItem = new MenuItem("Install");
+            MenuItem menuItem = new MenuItem(bundle.getString("install"));
             menuItem.addActionListener(e -> install(jdk));
             menu.add(menuItem);
         }
