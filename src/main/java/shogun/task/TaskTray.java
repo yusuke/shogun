@@ -187,10 +187,15 @@ public class TaskTray {
                 QUESTION_MESSAGE, dialogIcon);
         if (response == JOptionPane.OK_OPTION) {
             sdk.install("java", newJDK);
-
+            if (lastDefaultJDK != null) {
+                lastDefaultJDK.setUse(false);
+                updateMenu((Menu) popup.getItem(jdkList.indexOf(lastDefaultJDK)), lastDefaultJDK);
+            }
             // set new jdk installed
             newJDK.setStatus("installed");
+            newJDK.setUse(true);
             updateMenu((Menu) popup.getItem(jdkList.indexOf(newJDK)), newJDK);
+            lastDefaultJDK = newJDK;
         }
 
         blinking = false;
