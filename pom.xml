@@ -60,11 +60,13 @@
                                 <JAVA_HOME>${java.home}</JAVA_HOME>
                             </environmentVariables>
                             <arguments>
-                                <argument>create-image</argument>
+                                <argument>create-installer</argument>
                                 <argument>--verbose</argument>
                                 <argument>--echo-mode</argument>
                                 <argument>--jvm-args</argument>
                                 <argument>-Xmx6m -Xms6m</argument>
+                                <argument>--copyright</argument>
+                                <argument>Yusuke Yamamoto</argument>
                                 <argument>--icon</argument>
                                 <argument>${project.basedir}/Shogun.icns</argument>
                                 <argument>--input</argument>

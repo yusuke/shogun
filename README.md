@@ -4,12 +4,13 @@ With Shogun, you can install JDKs, switch between JDKs at ease.
 ![Shogun](images/screenshot.png "Shogun at work")
 
 ## Supported platform
-macOS(tested), Linux
+macOS (tested on Mojave 10.14.5)
 
 ## Launch Shogun
-Download the latest binary from the [release page](https://github.com/yusuke/shogun/releases/), and double-click to launch the app.
-
+Download the latest binary from the [release page](https://github.com/yusuke/shogun/releases/), double-click the app icon to launch.
+On macOS Mojave or later, you'll see a dialog from [Gatekeeper](https://support.apple.com/en-us/HT202491) saying nothing malicious was found. Click open to proceed. You won't see the dialog late on.
 ![Shogun](images/appIcon.png "APP Icon")
+![Shogun](images/gatekeeper-alert.png "Alert from Gatekeeper")
  
 ## What does it offer?
 Currently you can:
