@@ -68,7 +68,7 @@
                                 <argument>--copyright</argument>
                                 <argument>Yusuke Yamamoto</argument>
                                 <argument>--icon</argument>
-                                <argument>${project.basedir}/Shogun.icns</argument>
+                                <argument>${project.basedir}/package/Shogun.icns</argument>
                                 <argument>--input</argument>
                                 <argument>${project.build.directory}/</argument>
                                 <argument>--class</argument>
