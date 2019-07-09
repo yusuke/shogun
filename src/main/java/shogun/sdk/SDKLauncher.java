@@ -20,7 +20,7 @@ class SDKLauncher {
             OutputStream outputStream = process.getOutputStream();
             PrintWriter printWriter = new PrintWriter(outputStream);
             // say yes
-            printWriter.write("y\n");
+            printWriter.write("n\n");
             printWriter.flush();
             process.waitFor();
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
