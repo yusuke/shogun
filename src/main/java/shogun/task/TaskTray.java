@@ -126,6 +126,11 @@ public class TaskTray {
             menu.add(menuItem);
         }
         if (jdk.isInstalled()) {
+            MenuItem menuItem = new MenuItem(getMessage("openInTerminal", jdk.getIdentifier()));
+            menuItem.addActionListener(e -> openInTerminal(jdk));
+            menu.add(menuItem);
+        }
+        if (jdk.isInstalled()) {
             MenuItem menuItem = new MenuItem(bundle.getString("revealInFinder"));
             menuItem.addActionListener(e -> revealInFinder(jdk));
             menu.add(menuItem);
@@ -142,9 +147,12 @@ public class TaskTray {
         }
     }
 
+    private void openInTerminal(Version jdk) {
+        jdk.openInTerminal();
+    }
+
     private void revealInFinder(Version jdk) {
         jdk.revealInFinder();
-
     }
 
     private static String toLabel(Version version) {

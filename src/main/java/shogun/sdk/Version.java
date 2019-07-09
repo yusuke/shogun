@@ -51,7 +51,7 @@ public final class Version {
         return status.equals("installed");
     }
 
-    String getIdentifier() {
+    public String getIdentifier() {
         return identifier;
     }
 
@@ -90,6 +90,9 @@ public final class Version {
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
+    }
 
+    public void openInTerminal() {
+        SDKLauncher.exec("bash", "-c", String.format("osascript -e 'tell application \"Terminal\" to do script \"sdk use java %s\"';osascript -e 'tell application \"Terminal\" to activate'", getIdentifier()));
     }
 }
