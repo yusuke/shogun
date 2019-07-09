@@ -1,5 +1,8 @@
 package shogun.sdk;
 
+import java.awt.*;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
 import java.io.File;
 import java.io.IOException;
 
@@ -82,8 +85,11 @@ public final class Version {
         return vendor + " " + version;
     }
 
+    private String getPath() {
+        return new File(SDK.SDK_MAN_DIR + File.separator + "candidates" + File.separator + "java" + File.separator + identifier).getAbsolutePath();
+    }
     public void revealInFinder() {
-        ProcessBuilder pb = new ProcessBuilder("open", SDK.SDK_MAN_DIR + File.separator + "candidates" + File.separator + "java" + File.separator + identifier);
+        ProcessBuilder pb = new ProcessBuilder("open", getPath());
         try {
             Process process = pb.start();
             process.waitFor();
@@ -94,5 +100,13 @@ public final class Version {
 
     public void openInTerminal() {
         SDKLauncher.exec("bash", "-c", String.format("osascript -e 'tell application \"Terminal\" to do script \"sdk use java %s\"';osascript -e 'tell application \"Terminal\" to activate'", getIdentifier()));
+    }
+
+    public void copyPathToClipboard() {
+        Toolkit kit = Toolkit.getDefaultToolkit();
+        Clipboard clip = kit.getSystemClipboard();
+
+        StringSelection ss = new StringSelection(getPath());
+        clip.setContents(ss, ss);
     }
 }
