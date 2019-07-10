@@ -53,6 +53,9 @@ public class SDK {
 
     List<Version> parseVersions(String candidate, String response) {
         isOffline(response);
+        if (!isOffline() && candidate.equals("java")) {
+            return parseJavaVersions(response);
+        }
         List<Version> versionList = new ArrayList<>();
         for (String line : response.split("\n")) {
             if ((isOffline() && line.matches("^ [*>].*$")) || (!isOffline() && line.startsWith(" "))) {
@@ -96,32 +99,29 @@ public class SDK {
         return list.stream().filter(e -> e.contains("$ sdk install ")).map(e -> e.split("sdk install ")[1]).collect(Collectors.toList());
     }
 
-    List<Version> parseJavaVersions(String string) {
+    private List<Version> parseJavaVersions(String string) {
         List<Version> versionList = new ArrayList<>(50);
-        if (isOffline(string)) {
-            versionList = parseVersions("java", string);
-        } else {
-            String[] versions = string.split("\n");
-            String lastVendor = "";
-            for (String line : versions) {
-                if (line.contains("|") && !(line.contains("Vendor") && line.contains("Use") && line.contains("Dist"))) {
-                    // line contains version
-                    String[] split = line.split("\\|");
-                    String vendor = split[0].trim();
-                    if (vendor.length() == 0) {
-                        vendor = lastVendor;
-                    } else {
-                        lastVendor = vendor;
-                    }
-                    boolean use = ">>>".equals(split[1].trim());
-                    String versionStr = split[2].trim();
-                    String dist = split[3].trim();
-                    String status = split[4].trim();
-                    String identifier = split[5].trim();
-                    versionList.add(new JavaVersion("java", vendor, use, versionStr, dist, status, identifier));
+        String[] versions = string.split("\n");
+        String lastVendor = "";
+        for (String line : versions) {
+            if (line.contains("|") && !(line.contains("Vendor") && line.contains("Use") && line.contains("Dist"))) {
+                // line contains version
+                String[] split = line.split("\\|");
+                String vendor = split[0].trim();
+                if (vendor.length() == 0) {
+                    vendor = lastVendor;
+                } else {
+                    lastVendor = vendor;
                 }
+                boolean use = ">>>".equals(split[1].trim());
+                String versionStr = split[2].trim();
+                String dist = split[3].trim();
+                String status = split[4].trim();
+                String identifier = split[5].trim();
+                versionList.add(new JavaVersion("java", vendor, use, versionStr, dist, status, identifier));
             }
         }
+
         return versionList;
     }
 

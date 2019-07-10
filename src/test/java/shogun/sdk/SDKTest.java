@@ -89,7 +89,7 @@ class SDKTest {
         Path path = Paths.get(SDKTest.class.getResource("/shogun/list-java-offline.txt").toURI());
         List<String> javaVersions = Files.readAllLines(path);
         SDK sdk = new SDK();
-        List<Version> versions = sdk.parseJavaVersions(String.join("\n", javaVersions));
+        List<Version> versions = sdk.parseVersions("java", String.join("\n", javaVersions));
         assumeTrue(sdk.isOffline());
         assertEquals(5, versions.size());
         assertFalse(versions.get(0) instanceof JavaVersion);
@@ -227,7 +227,7 @@ class SDKTest {
         URL resource = SDKTest.class.getResource("/shogun/list-java.txt");
         Path path = Paths.get(resource.toURI());
         List<String> javaVersions = Files.readAllLines(path);
-        List<Version> versions = new SDK().parseJavaVersions(String.join("\n", javaVersions));
+        List<Version> versions = new SDK().parseVersions("java", String.join("\n", javaVersions));
         assertEquals(34, versions.size());
         JavaVersion adoptOpenJDK = (JavaVersion) versions.get(0);
         assertEquals("AdoptOpenJDK", adoptOpenJDK.getVendor());
