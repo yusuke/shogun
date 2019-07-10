@@ -150,7 +150,7 @@ public class SDK {
         uninstall(candidate, version.getIdentifier());
     }
 
-    List<String> getInstalledCandidates() {
+    public List<String> getInstalledCandidates() {
         if (!isInstalled()) {
             throw new IllegalStateException("SDKMAN! not installed!");
         }

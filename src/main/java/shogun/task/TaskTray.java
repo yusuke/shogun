@@ -10,10 +10,8 @@ import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.io.IOException;
 import java.text.MessageFormat;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
-import java.util.ResourceBundle;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static javax.swing.JOptionPane.QUESTION_MESSAGE;
@@ -88,17 +86,25 @@ public class TaskTray {
         popup.removeAll();
         if (sdk.isInstalled()) {
             String version = sdk.getVersion();
-            List<Version> original = sdk.list("java");
-            jdkList = new ArrayList<>();
-            jdkList.addAll(original.stream().filter(e -> e.isLocallyInstalled() || e.isInstalled()).collect(Collectors.toList()));
-            jdkList.addAll(original.stream().filter(e -> !(e.isLocallyInstalled() || e.isInstalled())).collect(Collectors.toList()));
-            for (Version jdk : jdkList) {
-                if (jdk.isUse()) {
-                    lastDefaultJDK = jdk;
+            var installedCandidates = sdk.getInstalledCandidates();
+            for (String candidate : installedCandidates) {
+                var original = sdk.list(candidate);
+                Optional<Version> first = original.stream().filter(Version::isUse).findFirst();
+                Menu candidateMenu = new Menu();
+                first.ifPresentOrElse(e -> candidateMenu.setLabel(candidate + " > " + e.toString()), () -> candidateMenu.setLabel(candidate));
+                popup.add(candidateMenu);
+
+                jdkList = new ArrayList<>();
+                jdkList.addAll(original.stream().filter(e -> e.isLocallyInstalled() || e.isInstalled()).collect(Collectors.toList()));
+                jdkList.addAll(original.stream().filter(e -> !(e.isLocallyInstalled() || e.isInstalled())).collect(Collectors.toList()));
+                for (Version jdk : jdkList) {
+                    if (jdk.isUse()) {
+                        lastDefaultJDK = jdk;
+                    }
+                    Menu jdkMenuItem = new Menu(toLabel(jdk));
+                    updateMenu(jdkMenuItem, jdk);
+                    candidateMenu.add(jdkMenuItem);
                 }
-                Menu jdkMenuItem = new Menu(toLabel(jdk));
-                updateMenu(jdkMenuItem, jdk);
-                popup.add(jdkMenuItem);
             }
 
             MenuItem versionLabel = new MenuItem(version + (sdk.isOffline() ? " (offline)" : ""));
@@ -173,6 +179,7 @@ public class TaskTray {
         StringSelection ss = new StringSelection(jdk.getPath());
         clip.setContents(ss, ss);
     }
+
     private void revealInFinder(Version jdk) {
         ProcessBuilder pb = new ProcessBuilder("open", jdk.getPath());
         try {
