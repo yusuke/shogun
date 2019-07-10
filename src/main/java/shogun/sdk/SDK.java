@@ -11,10 +11,9 @@ import java.util.stream.Collectors;
 
 public class SDK {
 
-    static final String SDK_MAN_DIR = System.getProperty("user.home") + File.separator + ".sdkman";
 
     public boolean isInstalled() {
-        return Files.exists(Paths.get(SDK_MAN_DIR + File.separator + "bin" + File.separator + "sdkman-init.sh"));
+        return Files.exists(Paths.get(getSDK_MAN_DIR() + File.separator + "bin" + File.separator + "sdkman-init.sh"));
     }
 
     public String install() {
@@ -111,6 +110,10 @@ public class SDK {
     }
 
     private static String runSDK(String command) {
-        return SDKLauncher.exec("bash", "-c", String.format("source %s/bin/sdkman-init.sh;sdk %s", SDK_MAN_DIR, command)).trim();
+        return SDKLauncher.exec("bash", "-c", String.format("source %s/bin/sdkman-init.sh;sdk %s", getSDK_MAN_DIR(), command)).trim();
+    }
+
+    static String getSDK_MAN_DIR() {
+        return SDKLauncher.exec("bash", "-c", "echo $SDKMAN_DIR").trim();
     }
 }

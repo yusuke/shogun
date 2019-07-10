@@ -87,7 +87,7 @@ public final class Version {
     }
 
     public String getPath() {
-        return new File(SDK.SDK_MAN_DIR + File.separator + "candidates" + File.separator + "java" + File.separator + identifier).getAbsolutePath();
+        return new File(SDK.getSDK_MAN_DIR() + File.separator + "candidates" + File.separator + "java" + File.separator + identifier).getAbsolutePath();
     }
 
 }

@@ -19,10 +19,18 @@ class SDKTest {
 
     @Test
     void isInstalled() {
-        boolean sdkAssumedTobeInstalled = Files.exists(Paths.get(SDK.SDK_MAN_DIR));
+        boolean sdkAssumedTobeInstalled = Files.exists(Paths.get(SDK.getSDK_MAN_DIR()));
         assertEquals(sdkAssumedTobeInstalled, new SDK().isInstalled());
     }
 
+    @Test
+    void sdkManDir() {
+
+        SDK sdk = new SDK();
+        if (sdk.isInstalled()) {
+            assertEquals(new File(System.getProperty("user.home") + File.separator + ".sdkman").getAbsolutePath(), SDK.getSDK_MAN_DIR());
+        }
+    }
     @Test
     void install() {
         SDK sdk = new SDK();
@@ -177,7 +185,7 @@ class SDKTest {
         assumeTrue(sdk.isInstalled());
 
         // version is stored in ~/.sdkman/var/version
-        List<String> lines = Files.readAllLines(Paths.get(SDK.SDK_MAN_DIR + File.separator + "var" + File.separator + "version"));
+        List<String> lines = Files.readAllLines(Paths.get(SDK.getSDK_MAN_DIR() + File.separator + "var" + File.separator + "version"));
         // X.Y.Z+nnn
         String versionFullString = lines.get(0);
 
