@@ -1,26 +1,19 @@
 package shogun.sdk;
 
 import java.io.File;
+import java.util.Objects;
 
-public final class Version {
-    private String vendor;
+public class Version {
+    private String candidate;
     private boolean use;
     private String version;
-    private String dist;
     private String status;
-    private String identifier;
 
-    public Version(String vendor, boolean use, String version, String dist, String status, String identifier) {
-        this.vendor = vendor;
+    public Version(String candidate, boolean use, String version, String status) {
+        this.candidate = candidate;
         this.use = use;
         this.version = version;
-        this.dist = dist;
         this.status = status;
-        this.identifier = identifier;
-    }
-
-    String getVendor() {
-        return vendor;
     }
 
     public boolean isUse() {
@@ -35,9 +28,6 @@ public final class Version {
         return version;
     }
 
-    String getDist() {
-        return dist;
-    }
 
     public String getStatus() {
         return status;
@@ -55,39 +45,29 @@ public final class Version {
         return status.equals("local only");
     }
 
-    public String getIdentifier() {
-        return identifier;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-
-        Version version = (Version) o;
-
-        if (!vendor.equals(version.vendor)) return false;
-        if (!this.version.equals(version.version)) return false;
-        if (!dist.equals(version.dist)) return false;
-        return identifier.equals(version.identifier);
+        Version version1 = (Version) o;
+        return Objects.equals(version, version1.version);
     }
 
     @Override
     public int hashCode() {
-        int result = vendor.hashCode();
-        result = 31 * result + version.hashCode();
-        result = 31 * result + dist.hashCode();
-        result = 31 * result + identifier.hashCode();
-        return result;
+        return Objects.hash(version);
     }
 
     @Override
     public String toString() {
-        return isLocallyInstalled() ? identifier : vendor + " " + version;
+        return version;
     }
 
     public String getPath() {
-        return new File(SDK.getSDK_MAN_DIR() + File.separator + "candidates" + File.separator + "java" + File.separator + identifier).getAbsolutePath();
+        return new File(SDK.getSDK_MAN_DIR() + File.separator + "candidates" + File.separator + candidate + File.separator + getIdentifier()).getAbsolutePath();
     }
 
+    public String getIdentifier() {
+        return version;
+    }
 }

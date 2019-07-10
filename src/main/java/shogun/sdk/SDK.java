@@ -36,7 +36,54 @@ public class SDK {
     }
 
     public List<Version> list(String candidate) {
-        return parseVersions(Arrays.asList(runSDK("list " + candidate).split("\n")));
+        List<String> list = Arrays.asList(runSDK("list " + candidate).split("\n"));
+        List<Version> versionList = new ArrayList<>();
+        if (candidate.equals("java")) {
+            List<JavaVersion> javaVersions = parseJavaVersions(list);
+            versionList.addAll(javaVersions);
+        } else {
+            versionList = parseVersions(candidate, list);
+        }
+        return versionList;
+    }
+
+    List<Version> parseVersions(String candidate, List<String> list) {
+        List<Version> versionList = new ArrayList<>();
+        for (String line : list) {
+            if (line.startsWith(" ")) {
+                // line contains version
+                String status = "";
+                boolean currentlyInUse = false;
+                String version;
+                for (String element : line.replaceAll(" +", " ").trim().split(" ")) {
+                    // + - local version
+                    // * - installed
+                    // > - currently in use
+                    if (element.matches("[+*>]")) {
+                        switch (element) {
+                            case "+":
+                                status = "local only";
+                                break;
+                            case ">":
+                                currentlyInUse = true;
+                                break;
+                            case "*":
+                                status = "installed";
+                        }
+                    } else {
+                        version = element;
+                        versionList.add(new Version(candidate, currentlyInUse, version, status));
+                        status = "";
+                        currentlyInUse = false;
+                    }
+                }
+            }
+        }
+        return versionList;
+    }
+
+    public List<JavaVersion> listJava() {
+        return parseJavaVersions(Arrays.asList(runSDK("list java").split("\n")));
     }
 
     List<String> list() {
@@ -47,9 +94,9 @@ public class SDK {
         return list.stream().filter(e -> e.contains("$ sdk install ")).map(e -> e.split("sdk install ")[1]).collect(Collectors.toList());
     }
 
-    static List<Version> parseVersions(List<String> versions) {
+    static List<JavaVersion> parseJavaVersions(List<String> versions) {
         String lastVendor = "";
-        List<Version> versionList = new ArrayList<>(50);
+        List<JavaVersion> versionList = new ArrayList<>(50);
         for (String line : versions) {
             if (line.contains("|") && !(line.contains("Vendor") && line.contains("Use") && line.contains("Dist"))) {
                 // line contains version
@@ -65,7 +112,7 @@ public class SDK {
                 String dist = split[3].trim();
                 String status = split[4].trim();
                 String identifier = split[5].trim();
-                versionList.add(new Version(vendor, use, versionStr, dist, status, identifier));
+                versionList.add(new JavaVersion("java", vendor, use, versionStr, dist, status, identifier));
             }
         }
         return versionList;
@@ -101,6 +148,22 @@ public class SDK {
         uninstall(candidate, version.getIdentifier());
     }
 
+    List<String> getInstalledCandidates() {
+        if (!isInstalled()) {
+            throw new IllegalStateException("SDKMAN! not installed!");
+        }
+        var candidates = new ArrayList<String>();
+        File[] candidateDirs = new File(getSDK_MAN_DIR() + File.separator + "candidates").listFiles();
+        if (candidateDirs != null) {
+            for (File file : candidateDirs) {
+                if (file.isDirectory()) {
+                    candidates.add(file.getName());
+                }
+            }
+        }
+        return candidates;
+    }
+
     void uninstall(String candidate, String identifier) {
         runSDK(String.format("uninstall %s %s", candidate, escape(identifier)));
     }
@@ -113,7 +176,12 @@ public class SDK {
         return SDKLauncher.exec("bash", "-c", String.format("source %s/bin/sdkman-init.sh;sdk %s", getSDK_MAN_DIR(), command)).trim();
     }
 
+    private static String sdkManDir = null;
+
     static String getSDK_MAN_DIR() {
-        return SDKLauncher.exec("bash", "-c", "echo $SDKMAN_DIR").trim();
+        if (sdkManDir == null) {
+            sdkManDir = SDKLauncher.exec("bash", "-c", "echo $SDKMAN_DIR").trim();
+        }
+        return sdkManDir;
     }
 }
