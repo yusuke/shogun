@@ -9,7 +9,7 @@ public class Version {
     private String version;
     private String status;
 
-    public Version(String candidate, boolean use, String version, String status) {
+    Version(String candidate, boolean use, String version, String status) {
         this.candidate = candidate;
         this.use = use;
         this.version = version;
@@ -43,6 +43,10 @@ public class Version {
 
     public boolean isLocallyInstalled() {
         return status.equals("local only");
+    }
+
+    public String getCandidate() {
+        return candidate;
     }
 
     @Override

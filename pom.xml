@@ -64,7 +64,7 @@
                                 <argument>--verbose</argument>
                                 <argument>--echo-mode</argument>
                                 <argument>--jvm-args</argument>
-                                <argument>-Xmx6m -Xms6m</argument>
+                                <argument>-Xmx10m -Xms10m</argument>
                                 <argument>--copyright</argument>
                                 <argument>Yusuke Yamamoto</argument>
                                 <argument>--icon</argument>

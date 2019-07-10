@@ -69,13 +69,13 @@ class SDKTest {
         Optional<Version> notInstalled = java.stream().filter(e -> !e.getStatus().equals("installed")).findFirst();
         notInstalled.ifPresent(e -> {
                     // install the sdk
-                    sdk.install("java", e);
+            sdk.install(e);
                     List<Version> newSDKs = sdk.list("java");
                     Optional<Version> installed = newSDKs.stream().filter(e2 -> e2.getIdentifier().equals(e.getIdentifier())).findFirst();
                     assertTrue(installed.isPresent());
             assertTrue(installed.get().isInstalled());
                     // uninstall the sdk
-                    sdk.uninstall("java", e);
+            sdk.uninstall(e);
                     List<Version> uninstalledSDK = sdk.list("java");
                     Optional<Version> uninstalled = uninstalledSDK.stream().filter(e2 -> e2.getIdentifier().equals(e.getIdentifier())).findFirst();
                     assertTrue(uninstalled.isPresent());
@@ -182,13 +182,13 @@ class SDKTest {
                         assertEquals("local only", e.getStatus());
                         assertTrue(e.isLocallyInstalled());
                         assertEquals(javaList.size() + 1, javaList2.size());
-                        sdk.uninstall("java", localDummuyJava);
+                sdk.uninstall(e);
                         List<Version> javaList3 = sdk.list("java");
                         assertEquals(javaList, javaList3);
                     }
             );
         } finally {
-            sdk.uninstall("java", localDummuyJava);
+            sdk.uninstall(new Version("java", false, localDummuyJava, "local only"));
         }
 
     }
@@ -197,7 +197,7 @@ class SDKTest {
     void candidates() {
         SDK sdk = new SDK();
         assumeTrue(sdk.isInstalled());
-        List<String> list = sdk.list();
+        List<String> list = sdk.listCandidates();
         assertTrue(10 < list.size());
         assertEquals("ant", list.get(0));
         assertEquals("asciidoctorj", list.get(1));

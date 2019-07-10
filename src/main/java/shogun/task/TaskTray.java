@@ -106,6 +106,23 @@ public class TaskTray {
                     candidateMenu.add(jdkMenuItem);
                 }
             }
+            if (!sdk.isOffline()) {
+                Menu candidatesMenu = new Menu(bundle.getString("otherCandidates"));
+                popup.add(candidatesMenu);
+                List<String> candidates = sdk.listCandidates();
+                for (String candidate : candidates) {
+                    if (!installedCandidates.contains(candidate)) {
+                        Menu candidateMenu = new Menu(candidate);
+                        candidatesMenu.add(candidateMenu);
+                        List<Version> list = sdk.list(candidate);
+                        for (Version version1 : list) {
+                            Menu versionMenu = new Menu(toLabel(version1));
+                            updateMenu(versionMenu, version1);
+                            candidateMenu.add(versionMenu);
+                        }
+                    }
+                }
+            }
 
             MenuItem versionLabel = new MenuItem(version + (sdk.isOffline() ? " (offline)" : ""));
             versionLabel.addActionListener(e -> refreshItems());
@@ -225,11 +242,11 @@ public class TaskTray {
     private void install(Version newJDK) {
         blinking = true;
         int response = JOptionPane.showConfirmDialog(thisFrameMakesDialogsAlwaysOnTop,
-                getMessage("confirmInstallMessage", newJDK.toString()),
-                getMessage("confirmInstallTitle", newJDK.toString()), JOptionPane.OK_CANCEL_OPTION,
+                getMessage("confirmInstallMessage", newJDK.getCandidate(), newJDK.toString()),
+                getMessage("confirmInstallTitle", newJDK.getCandidate(), newJDK.toString()), JOptionPane.OK_CANCEL_OPTION,
                 QUESTION_MESSAGE, dialogIcon);
         if (response == JOptionPane.OK_OPTION) {
-            sdk.install("java", newJDK);
+            sdk.install(newJDK);
             refreshItems();
         }
 
@@ -240,11 +257,11 @@ public class TaskTray {
     private void uninstall(Version jdkToBeUninstalled) {
         blinking = true;
         int response = JOptionPane.showConfirmDialog(thisFrameMakesDialogsAlwaysOnTop,
-                getMessage("confirmUninstallMessage", jdkToBeUninstalled.toString()),
-                getMessage("confirmUninstallTitle", jdkToBeUninstalled.toString()), JOptionPane.OK_CANCEL_OPTION,
+                getMessage("confirmUninstallMessage", jdkToBeUninstalled.getCandidate(), jdkToBeUninstalled.toString()),
+                getMessage("confirmUninstallTitle", jdkToBeUninstalled.getCandidate(), jdkToBeUninstalled.toString()), JOptionPane.OK_CANCEL_OPTION,
                 QUESTION_MESSAGE, dialogIcon);
         if (response == JOptionPane.OK_OPTION) {
-            sdk.uninstall("java", jdkToBeUninstalled);
+            sdk.uninstall(jdkToBeUninstalled);
             refreshItems();
         }
         blinking = false;

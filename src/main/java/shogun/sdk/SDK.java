@@ -103,7 +103,7 @@ public class SDK {
         return versionList;
     }
 
-    List<String> list() {
+    public List<String> listCandidates() {
         return parseList(Arrays.asList(runSDK("list").split("\n")));
     }
 
@@ -137,12 +137,8 @@ public class SDK {
         return versionList;
     }
 
-    public void install(String candidate, Version version) {
-        install(candidate, version.getIdentifier());
-    }
-
-    private void install(String candidate, String identifier) {
-        runSDK(String.format("install %s %s", candidate, identifier));
+    public void install(Version version) {
+        runSDK(String.format("install %s %s", version.getCandidate(), version.getIdentifier()));
     }
 
     /**
@@ -163,8 +159,8 @@ public class SDK {
         return string.replaceAll(" ", "\\\\ ");
     }
 
-    public void uninstall(String candidate, Version version) {
-        uninstall(candidate, version.getIdentifier());
+    public void uninstall(Version version) {
+        runSDK(String.format("uninstall %s %s", version.getCandidate(), escape(version.getIdentifier())));
     }
 
     public List<String> getInstalledCandidates() {
@@ -176,15 +172,14 @@ public class SDK {
         if (candidateDirs != null) {
             for (File file : candidateDirs) {
                 if (file.isDirectory()) {
-                    candidates.add(file.getName());
+                    File[] files = file.listFiles();
+                    if (files != null && 0 < files.length) {
+                        candidates.add(file.getName());
+                    }
                 }
             }
         }
         return candidates;
-    }
-
-    void uninstall(String candidate, String identifier) {
-        runSDK(String.format("uninstall %s %s", candidate, escape(identifier)));
     }
 
     public void makeDefault(String candidate, Version version) {
