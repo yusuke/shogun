@@ -53,7 +53,7 @@ public class SDK {
         }
         List<Version> versionList = new ArrayList<>();
         for (String line : response.split("\n")) {
-            if ((isOffline() && line.matches("^ [*>].*$")) || (!isOffline() && line.startsWith(" "))) {
+            if ((isOffline() && line.matches("^ [*>].*$")) || (!isOffline() && (line.startsWith(" ") && !line.trim().isEmpty()))) {
                 // line contains version
                 String status = "";
                 boolean currentlyInUse = false;
