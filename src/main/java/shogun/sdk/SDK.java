@@ -6,7 +6,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class SDK {
@@ -31,26 +30,32 @@ public class SDK {
         return versionString[versionString.length - 1];
     }
 
-    public Optional<Version> getJDKinUse() {
-        return list("java").stream().filter(Version::isUse).findFirst();
-    }
-
     public List<Version> list(String candidate) {
-        List<String> list = Arrays.asList(runSDK("list " + candidate).split("\n"));
-        List<Version> versionList = new ArrayList<>();
+        String response = runSDK("list " + candidate);
+        List<Version> versionList;
         if (candidate.equals("java")) {
-            List<JavaVersion> javaVersions = parseJavaVersions(list);
-            versionList.addAll(javaVersions);
+            versionList = parseJavaVersions(response);
         } else {
-            versionList = parseVersions(candidate, list);
+            versionList = parseVersions(candidate, response);
         }
         return versionList;
     }
 
-    List<Version> parseVersions(String candidate, List<String> list) {
+    private boolean wasOfflineLastTime = false;
+
+    public boolean isOffline() {
+        return wasOfflineLastTime;
+    }
+
+    boolean isOffline(String status) {
+        return wasOfflineLastTime = status.contains("INTERNET NOT REACHABLE!") || status.contains("Offline:");
+    }
+
+    List<Version> parseVersions(String candidate, String response) {
+        isOffline(response);
         List<Version> versionList = new ArrayList<>();
-        for (String line : list) {
-            if (line.startsWith(" ")) {
+        for (String line : response.split("\n")) {
+            if ((isOffline() && line.matches("^ [*>].*$")) || (!isOffline() && line.startsWith(" "))) {
                 // line contains version
                 String status = "";
                 boolean currentlyInUse = false;
@@ -66,6 +71,7 @@ public class SDK {
                                 break;
                             case ">":
                                 currentlyInUse = true;
+                                status = "installed";
                                 break;
                             case "*":
                                 status = "installed";
@@ -82,10 +88,6 @@ public class SDK {
         return versionList;
     }
 
-    public List<JavaVersion> listJava() {
-        return parseJavaVersions(Arrays.asList(runSDK("list java").split("\n")));
-    }
-
     List<String> list() {
         return parseList(Arrays.asList(runSDK("list").split("\n")));
     }
@@ -94,25 +96,30 @@ public class SDK {
         return list.stream().filter(e -> e.contains("$ sdk install ")).map(e -> e.split("sdk install ")[1]).collect(Collectors.toList());
     }
 
-    static List<JavaVersion> parseJavaVersions(List<String> versions) {
-        String lastVendor = "";
-        List<JavaVersion> versionList = new ArrayList<>(50);
-        for (String line : versions) {
-            if (line.contains("|") && !(line.contains("Vendor") && line.contains("Use") && line.contains("Dist"))) {
-                // line contains version
-                String[] split = line.split("\\|");
-                String vendor = split[0].trim();
-                if (vendor.length() == 0) {
-                    vendor = lastVendor;
-                } else {
-                    lastVendor = vendor;
+    List<Version> parseJavaVersions(String string) {
+        List<Version> versionList = new ArrayList<>(50);
+        if (isOffline(string)) {
+            versionList = parseVersions("java", string);
+        } else {
+            String[] versions = string.split("\n");
+            String lastVendor = "";
+            for (String line : versions) {
+                if (line.contains("|") && !(line.contains("Vendor") && line.contains("Use") && line.contains("Dist"))) {
+                    // line contains version
+                    String[] split = line.split("\\|");
+                    String vendor = split[0].trim();
+                    if (vendor.length() == 0) {
+                        vendor = lastVendor;
+                    } else {
+                        lastVendor = vendor;
+                    }
+                    boolean use = ">>>".equals(split[1].trim());
+                    String versionStr = split[2].trim();
+                    String dist = split[3].trim();
+                    String status = split[4].trim();
+                    String identifier = split[5].trim();
+                    versionList.add(new JavaVersion("java", vendor, use, versionStr, dist, status, identifier));
                 }
-                boolean use = ">>>".equals(split[1].trim());
-                String versionStr = split[2].trim();
-                String dist = split[3].trim();
-                String status = split[4].trim();
-                String identifier = split[5].trim();
-                versionList.add(new JavaVersion("java", vendor, use, versionStr, dist, status, identifier));
             }
         }
         return versionList;

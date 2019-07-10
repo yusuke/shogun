@@ -85,6 +85,41 @@ class SDKTest {
     }
 
     @Test
+    void parseOfflineJavaList() throws IOException, URISyntaxException {
+        Path path = Paths.get(SDKTest.class.getResource("/shogun/list-java-offline.txt").toURI());
+        List<String> javaVersions = Files.readAllLines(path);
+        SDK sdk = new SDK();
+        List<Version> versions = sdk.parseJavaVersions(String.join("\n", javaVersions));
+        assumeTrue(sdk.isOffline());
+        assertEquals(5, versions.size());
+        assertFalse(versions.get(0) instanceof JavaVersion);
+        Version jdk14 = versions.get(0);
+        assertEquals("jdk-14", jdk14.getVersion());
+        assertFalse(jdk14.isUse());
+        assertTrue(jdk14.isInstalled());
+
+        Version hsadpt80212 = versions.get(1);
+        assertEquals("8.0.212.hs-adpt", hsadpt80212.getVersion());
+        assertFalse(hsadpt80212.isUse());
+        assertTrue(hsadpt80212.isInstalled());
+
+        Version hsadpt1201 = versions.get(2);
+        assertEquals("12.0.1.hs-adpt", hsadpt1201.getVersion());
+        assertFalse(hsadpt1201.isUse());
+        assertTrue(hsadpt1201.isInstalled());
+
+        Version hsadpt1103 = versions.get(3);
+        assertEquals("11.0.3.hs-adpt", hsadpt1103.getVersion());
+        assertTrue(hsadpt1103.isUse());
+        assertTrue(hsadpt1103.isInstalled());
+
+        Version librca1103 = versions.get(4);
+        assertEquals("11.0.3-librca", librca1103.getVersion());
+        assertFalse(librca1103.isUse());
+        assertTrue(librca1103.isInstalled());
+    }
+
+    @Test
     void installLocal() throws IOException {
         SDK sdk = new SDK();
         String localDummuyJava = "localJava";
@@ -146,7 +181,7 @@ class SDKTest {
     @Test
     void parseVersionsGroovy() throws URISyntaxException, IOException {
         List<String> groovyVersions = Files.readAllLines(Paths.get(SDKTest.class.getResource("/shogun/list-groovy.txt").toURI()));
-        List<Version> versions = new SDK().parseVersions("groovy", groovyVersions);
+        List<Version> versions = new SDK().parseVersions("groovy", String.join("\n", groovyVersions));
         assertEquals(110, versions.size());
         for (Version version : versions) {
             assertFalse(version.isUse());
@@ -158,7 +193,7 @@ class SDKTest {
     @Test
     void parseVersionsMaven() throws URISyntaxException, IOException {
         List<String> mavenVersions = Files.readAllLines(Paths.get(SDKTest.class.getResource("/shogun/list-maven.txt").toURI()));
-        List<Version> versions = new SDK().parseVersions("maven", mavenVersions);
+        List<Version> versions = new SDK().parseVersions("maven", String.join("\n", mavenVersions));
         assertEquals(8, versions.size());
 
         assertEquals("3.6.1", versions.get(0).getVersion());
@@ -192,9 +227,9 @@ class SDKTest {
         URL resource = SDKTest.class.getResource("/shogun/list-java.txt");
         Path path = Paths.get(resource.toURI());
         List<String> javaVersions = Files.readAllLines(path);
-        List<JavaVersion> versions = SDK.parseJavaVersions(javaVersions);
+        List<Version> versions = new SDK().parseJavaVersions(String.join("\n", javaVersions));
         assertEquals(34, versions.size());
-        JavaVersion adoptOpenJDK = versions.get(0);
+        JavaVersion adoptOpenJDK = (JavaVersion) versions.get(0);
         assertEquals("AdoptOpenJDK", adoptOpenJDK.getVendor());
         assertTrue(adoptOpenJDK.isUse());
         assertEquals("12.0.1.j9", adoptOpenJDK.getVersion());
@@ -202,7 +237,7 @@ class SDKTest {
         assertEquals("installed", adoptOpenJDK.getStatus());
         assertEquals("12.0.1.j9-adpt", adoptOpenJDK.getIdentifier());
 
-        JavaVersion adoptOpenJDK2 = versions.get(1);
+        JavaVersion adoptOpenJDK2 = (JavaVersion) versions.get(1);
         assertEquals("AdoptOpenJDK", adoptOpenJDK2.getVendor());
         assertFalse(adoptOpenJDK2.isUse());
         assertEquals("12.0.1.hs", adoptOpenJDK2.getVersion());
@@ -210,7 +245,7 @@ class SDKTest {
         assertEquals("", adoptOpenJDK2.getStatus());
         assertEquals("12.0.1.hs-adpt", adoptOpenJDK2.getIdentifier());
 
-        JavaVersion sap2 = versions.get(versions.size() - 1);
+        JavaVersion sap2 = (JavaVersion) versions.get(versions.size() - 1);
 
         assertEquals("SAP", sap2.getVendor());
         assertFalse(sap2.isUse());
@@ -220,6 +255,23 @@ class SDKTest {
         assertEquals("11.0.3-sapmchn", sap2.getIdentifier());
     }
 
+    @Test
+    void isOffline() throws URISyntaxException, IOException {
+        List<String> mavenVersions = Files.readAllLines(Paths.get(SDKTest.class.getResource("/shogun/list-maven.txt").toURI()));
+        SDK sdk = new SDK();
+        assertFalse(sdk.isOffline(String.join("\n", mavenVersions)));
+        assertFalse(sdk.isOffline());
+        List<String> offlineResponse = Files.readAllLines(Paths.get(SDKTest.class.getResource("/shogun/offline.txt").toURI()));
+
+        SDK sdk1 = new SDK();
+        assertTrue(sdk1.isOffline(String.join("\n", offlineResponse)));
+        assertTrue(sdk1.isOffline());
+        List<String> offlineModeResponse = Files.readAllLines(Paths.get(SDKTest.class.getResource("/shogun/offline-mode.txt").toURI()));
+
+        SDK sdk2 = new SDK();
+        assertTrue(sdk2.isOffline(String.join("\n", offlineModeResponse)));
+        assertTrue(sdk2.isOffline());
+    }
 
     @Test
     void version() throws IOException {

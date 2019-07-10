@@ -101,7 +101,7 @@ public class TaskTray {
                 popup.add(jdkMenuItem);
             }
 
-            MenuItem versionLabel = new MenuItem(version);
+            MenuItem versionLabel = new MenuItem(version + (sdk.isOffline() ? " (offline)" : ""));
             versionLabel.addActionListener(e -> refreshItems());
             popup.add(versionLabel);
         } else {
