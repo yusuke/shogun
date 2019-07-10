@@ -218,6 +218,9 @@ class SDKTest {
         String groovyVersions = Files.readString(Paths.get(SDKTest.class.getResource("/shogun/list-groovy.txt").toURI()));
         List<Version> versions = new SDK().parseVersions("groovy", groovyVersions);
         assertEquals(110, versions.size());
+        assertEquals("3.0.0-beta-1", versions.get(0).getVersion());
+        assertEquals("3.0.0-alpha-4", versions.get(1).getVersion());
+        assertEquals("2.4.6", versions.get(28).getVersion());
         for (Version version : versions) {
             assertFalse(version.isUse());
             assertFalse(version.isLocallyInstalled());

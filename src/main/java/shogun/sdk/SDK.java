@@ -51,13 +51,19 @@ public class SDK {
         if (!isOffline() && candidate.equals("java")) {
             return parseJavaVersions(response);
         }
-        List<Version> versionList = new ArrayList<>();
+        List<List<Version>> versionListList = new ArrayList<>();
         for (String line : response.split("\n")) {
             if ((isOffline() && line.matches("^ [*>].*$")) || (!isOffline() && (line.startsWith(" ") && !line.trim().isEmpty()))) {
                 // line contains version
                 String status = "";
                 boolean currentlyInUse = false;
                 String version;
+
+                // versions are ordered as follows:
+                // 1 4 7  <- versionListInOneLine
+                // 2 5
+                // 3 6
+                List<Version> versionListInOneLine = new ArrayList<>();
                 for (String element : line.replaceAll(" +", " ").trim().split(" ")) {
                     // + - local version
                     // * - installed
@@ -76,12 +82,23 @@ public class SDK {
                         }
                     } else {
                         version = element;
-                        versionList.add(new Version(candidate, currentlyInUse, version, status));
+                        versionListInOneLine.add(new Version(candidate, currentlyInUse, version, status));
                         status = "";
                         currentlyInUse = false;
                     }
                 }
+                versionListList.add(versionListInOneLine);
             }
+        }
+        List<Version> versionList = new ArrayList<>();
+        int numberOfColumns = versionListList.get(0).size();
+        for (int i = 0; i < numberOfColumns; i++) {
+            for (List<Version> versions : versionListList) {
+                if (i < versions.size()) {
+                    versionList.add(versions.get(i));
+                }
+            }
+
         }
         return versionList;
     }
