@@ -223,7 +223,7 @@ public class TaskTray {
                 QUESTION_MESSAGE, dialogIcon);
         if (response == JOptionPane.OK_OPTION) {
             sdk.install("java", newJDK);
-            newJDK.setStatus("installed");
+            refreshItems();
         }
 
         blinking = false;
@@ -238,14 +238,7 @@ public class TaskTray {
                 QUESTION_MESSAGE, dialogIcon);
         if (response == JOptionPane.OK_OPTION) {
             sdk.uninstall("java", jdkToBeUninstalled);
-            if (lastDefaultJDK != null && lastDefaultJDK.equals(jdkToBeUninstalled)) {
-                lastDefaultJDK.setUse(false);
-                lastDefaultJDK = null;
-            }
-
-            // set new jdk installed
-            jdkToBeUninstalled.setStatus("");
-            updateMenu((Menu) popup.getItem(jdkList.indexOf(jdkToBeUninstalled)), jdkToBeUninstalled);
+            refreshItems();
         }
         blinking = false;
     }
