@@ -23,22 +23,17 @@ public class SDK {
     }
 
     public String getVersion() {
-        return parseSDKVersion(runSDK("version").split("\n"));
+        return parseSDKVersion(runSDK("version"));
     }
 
-    static String parseSDKVersion(String[] versionString) {
-        return versionString[versionString.length - 1];
+    String parseSDKVersion(String versionString) {
+        wasOfflineLastTime = isOffline(versionString);
+        String[] split = versionString.split("\n");
+        return split[split.length - 1];
     }
 
     public List<Version> list(String candidate) {
-        String response = runSDK("list " + candidate);
-        List<Version> versionList;
-        if (candidate.equals("java")) {
-            versionList = parseJavaVersions(response);
-        } else {
-            versionList = parseVersions(candidate, response);
-        }
-        return versionList;
+        return parseVersions(candidate, runSDK("list " + candidate));
     }
 
     private boolean wasOfflineLastTime = false;

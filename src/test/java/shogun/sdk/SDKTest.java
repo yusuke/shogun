@@ -85,8 +85,8 @@ class SDKTest {
     }
 
     @Test
-    void parseOfflineJavaList() throws IOException, URISyntaxException {
-        Path path = Paths.get(SDKTest.class.getResource("/shogun/list-java-offline.txt").toURI());
+    void parseOfflineModeJavaList() throws IOException, URISyntaxException {
+        Path path = Paths.get(SDKTest.class.getResource("/shogun/list-java-offline-mode.txt").toURI());
         String javaVersions = Files.readString(path);
         SDK sdk = new SDK();
         List<Version> versions = sdk.parseVersions("java", javaVersions);
@@ -116,6 +116,41 @@ class SDKTest {
         Version librca1103 = versions.get(4);
         assertEquals("11.0.3-librca", librca1103.getVersion());
         assertFalse(librca1103.isUse());
+        assertTrue(librca1103.isInstalled());
+    }
+
+    @Test
+    void parseJavaInternetUnreachableList() throws IOException, URISyntaxException {
+        Path path = Paths.get(SDKTest.class.getResource("/shogun/list-java-internet-unreachable.txt").toURI());
+        String javaVersions = Files.readString(path);
+        SDK sdk = new SDK();
+        List<Version> versions = sdk.parseVersions("java", javaVersions);
+        assumeTrue(sdk.isOffline());
+        assertEquals(5, versions.size());
+        assertFalse(versions.get(0) instanceof JavaVersion);
+        Version jdk14 = versions.get(0);
+        assertEquals("jdk-14", jdk14.getVersion());
+        assertFalse(jdk14.isUse());
+        assertTrue(jdk14.isInstalled());
+
+        Version hsadpt80212 = versions.get(1);
+        assertEquals("8.0.212.hs-adpt", hsadpt80212.getVersion());
+        assertFalse(hsadpt80212.isUse());
+        assertTrue(hsadpt80212.isInstalled());
+
+        Version hsadpt1201 = versions.get(2);
+        assertEquals("12.0.1.hs-adpt", hsadpt1201.getVersion());
+        assertFalse(hsadpt1201.isUse());
+        assertTrue(hsadpt1201.isInstalled());
+
+        Version hsadpt1103 = versions.get(3);
+        assertEquals("11.0.3.hs-adpt", hsadpt1103.getVersion());
+        assertFalse(hsadpt1103.isUse());
+        assertTrue(hsadpt1103.isInstalled());
+
+        Version librca1103 = versions.get(4);
+        assertEquals("11.0.3-librca", librca1103.getVersion());
+        assertTrue(librca1103.isUse());
         assertTrue(librca1103.isInstalled());
     }
 
@@ -293,7 +328,7 @@ class SDKTest {
     void versionFirst() throws URISyntaxException, IOException {
         // test version description with broadcast message can be parsed.
         String parsedVersion = Files.readString(Paths.get(SDKTest.class.getResource("/shogun/version-first.txt").toURI()));
-        String version = SDK.parseSDKVersion(parsedVersion.split("\n"));
+        String version = new SDK().parseSDKVersion(parsedVersion);
         assertEquals("SDKMAN 5.7.3+337", version);
     }
 }
