@@ -83,6 +83,7 @@ public class TaskTray {
     }
 
     private void refreshItems() {
+        blinking = true;
         popup.removeAll();
         if (sdk.isInstalled()) {
             String version = sdk.getVersion();
@@ -97,7 +98,7 @@ public class TaskTray {
             }
 
             MenuItem versionLabel = new MenuItem(version);
-            versionLabel.setEnabled(false);
+            versionLabel.addActionListener(e -> refreshItems());
             popup.add(versionLabel);
         } else {
             MenuItem installMenu = new MenuItem(bundle.getString("installSDKMan"));
@@ -112,6 +113,7 @@ public class TaskTray {
             System.exit(0);
         });
         popup.add(quitMenu);
+        blinking = false;
     }
 
     private void installSDKMAN() {

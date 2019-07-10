@@ -83,7 +83,7 @@ public final class Version {
 
     @Override
     public String toString() {
-        return isLocallyInstalled() ? version : vendor + " " + version;
+        return isLocallyInstalled() ? identifier : vendor + " " + version;
     }
 
     public String getPath() {
