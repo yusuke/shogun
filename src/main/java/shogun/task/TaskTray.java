@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.stream.Collectors;
 
 import static javax.swing.JOptionPane.QUESTION_MESSAGE;
 
@@ -82,12 +83,15 @@ public class TaskTray {
         }
     }
 
-    private void refreshItems() {
+    private synchronized void refreshItems() {
         blinking = true;
         popup.removeAll();
         if (sdk.isInstalled()) {
             String version = sdk.getVersion();
-            jdkList = sdk.list("java");
+            List<Version> original = sdk.list("java");
+            jdkList = new ArrayList<>();
+            jdkList.addAll(original.stream().filter(e -> e.isLocallyInstalled() || e.isInstalled()).collect(Collectors.toList()));
+            jdkList.addAll(original.stream().filter(e -> !(e.isLocallyInstalled() || e.isInstalled())).collect(Collectors.toList()));
             for (Version jdk : jdkList) {
                 if (jdk.isUse()) {
                     lastDefaultJDK = jdk;
