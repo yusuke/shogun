@@ -87,9 +87,9 @@ class SDKTest {
     @Test
     void parseOfflineJavaList() throws IOException, URISyntaxException {
         Path path = Paths.get(SDKTest.class.getResource("/shogun/list-java-offline.txt").toURI());
-        List<String> javaVersions = Files.readAllLines(path);
+        String javaVersions = Files.readString(path);
         SDK sdk = new SDK();
-        List<Version> versions = sdk.parseVersions("java", String.join("\n", javaVersions));
+        List<Version> versions = sdk.parseVersions("java", javaVersions);
         assumeTrue(sdk.isOffline());
         assertEquals(5, versions.size());
         assertFalse(versions.get(0) instanceof JavaVersion);
@@ -180,8 +180,8 @@ class SDKTest {
 
     @Test
     void parseVersionsGroovy() throws URISyntaxException, IOException {
-        List<String> groovyVersions = Files.readAllLines(Paths.get(SDKTest.class.getResource("/shogun/list-groovy.txt").toURI()));
-        List<Version> versions = new SDK().parseVersions("groovy", String.join("\n", groovyVersions));
+        String groovyVersions = Files.readString(Paths.get(SDKTest.class.getResource("/shogun/list-groovy.txt").toURI()));
+        List<Version> versions = new SDK().parseVersions("groovy", groovyVersions);
         assertEquals(110, versions.size());
         for (Version version : versions) {
             assertFalse(version.isUse());
@@ -192,8 +192,8 @@ class SDKTest {
 
     @Test
     void parseVersionsMaven() throws URISyntaxException, IOException {
-        List<String> mavenVersions = Files.readAllLines(Paths.get(SDKTest.class.getResource("/shogun/list-maven.txt").toURI()));
-        List<Version> versions = new SDK().parseVersions("maven", String.join("\n", mavenVersions));
+        String mavenVersions = Files.readString(Paths.get(SDKTest.class.getResource("/shogun/list-maven.txt").toURI()));
+        List<Version> versions = new SDK().parseVersions("maven", mavenVersions);
         assertEquals(8, versions.size());
 
         assertEquals("3.6.1", versions.get(0).getVersion());
@@ -226,8 +226,8 @@ class SDKTest {
     void parseVersions() throws URISyntaxException, IOException {
         URL resource = SDKTest.class.getResource("/shogun/list-java.txt");
         Path path = Paths.get(resource.toURI());
-        List<String> javaVersions = Files.readAllLines(path);
-        List<Version> versions = new SDK().parseVersions("java", String.join("\n", javaVersions));
+        String javaVersions = Files.readString(path);
+        List<Version> versions = new SDK().parseVersions("java", javaVersions);
         assertEquals(34, versions.size());
         JavaVersion adoptOpenJDK = (JavaVersion) versions.get(0);
         assertEquals("AdoptOpenJDK", adoptOpenJDK.getVendor());
@@ -257,19 +257,19 @@ class SDKTest {
 
     @Test
     void isOffline() throws URISyntaxException, IOException {
-        List<String> mavenVersions = Files.readAllLines(Paths.get(SDKTest.class.getResource("/shogun/list-maven.txt").toURI()));
+        String mavenVersions = Files.readString(Paths.get(SDKTest.class.getResource("/shogun/list-maven.txt").toURI()));
         SDK sdk = new SDK();
-        assertFalse(sdk.isOffline(String.join("\n", mavenVersions)));
+        assertFalse(sdk.isOffline(mavenVersions));
         assertFalse(sdk.isOffline());
-        List<String> offlineResponse = Files.readAllLines(Paths.get(SDKTest.class.getResource("/shogun/offline.txt").toURI()));
+        String offlineResponse = Files.readString(Paths.get(SDKTest.class.getResource("/shogun/offline.txt").toURI()));
 
         SDK sdk1 = new SDK();
-        assertTrue(sdk1.isOffline(String.join("\n", offlineResponse)));
+        assertTrue(sdk1.isOffline(offlineResponse));
         assertTrue(sdk1.isOffline());
-        List<String> offlineModeResponse = Files.readAllLines(Paths.get(SDKTest.class.getResource("/shogun/offline-mode.txt").toURI()));
+        String offlineModeResponse = Files.readString((Paths.get(SDKTest.class.getResource("/shogun/offline-mode.txt").toURI())));
 
         SDK sdk2 = new SDK();
-        assertTrue(sdk2.isOffline(String.join("\n", offlineModeResponse)));
+        assertTrue(sdk2.isOffline(offlineModeResponse));
         assertTrue(sdk2.isOffline());
     }
 
@@ -292,8 +292,8 @@ class SDKTest {
     @Test
     void versionFirst() throws URISyntaxException, IOException {
         // test version description with broadcast message can be parsed.
-        List<String> parsedVersion = Files.readAllLines(Paths.get(SDKTest.class.getResource("/shogun/version-first.txt").toURI()));
-        String version = SDK.parseSDKVersion(parsedVersion.toArray(new String[]{}));
+        String parsedVersion = Files.readString(Paths.get(SDKTest.class.getResource("/shogun/version-first.txt").toURI()));
+        String version = SDK.parseSDKVersion(parsedVersion.split("\n"));
         assertEquals("SDKMAN 5.7.3+337", version);
     }
 }
