@@ -1,10 +1,6 @@
 package shogun.sdk;
 
-import java.awt.*;
-import java.awt.datatransfer.Clipboard;
-import java.awt.datatransfer.StringSelection;
 import java.io.File;
-import java.io.IOException;
 
 public final class Version {
     private String vendor;
@@ -13,6 +9,7 @@ public final class Version {
     private String dist;
     private String status;
     private String identifier;
+
     public Version(String vendor, boolean use, String version, String dist, String status, String identifier) {
         this.vendor = vendor;
         this.use = use;
@@ -54,6 +51,10 @@ public final class Version {
         return status.equals("installed");
     }
 
+    public boolean isLocallyInstalled() {
+        return status.equals("local only");
+    }
+
     public String getIdentifier() {
         return identifier;
     }
@@ -82,31 +83,11 @@ public final class Version {
 
     @Override
     public String toString() {
-        return vendor + " " + version;
+        return isLocallyInstalled() ? version : vendor + " " + version;
     }
 
-    private String getPath() {
+    public String getPath() {
         return new File(SDK.SDK_MAN_DIR + File.separator + "candidates" + File.separator + "java" + File.separator + identifier).getAbsolutePath();
     }
-    public void revealInFinder() {
-        ProcessBuilder pb = new ProcessBuilder("open", getPath());
-        try {
-            Process process = pb.start();
-            process.waitFor();
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
 
-    public void openInTerminal() {
-        SDKLauncher.exec("bash", "-c", String.format("osascript -e 'tell application \"Terminal\" to do script \"sdk use java %s\"';osascript -e 'tell application \"Terminal\" to activate'", getIdentifier()));
-    }
-
-    public void copyPathToClipboard() {
-        Toolkit kit = Toolkit.getDefaultToolkit();
-        Clipboard clip = kit.getSystemClipboard();
-
-        StringSelection ss = new StringSelection(getPath());
-        clip.setContents(ss, ss);
-    }
 }

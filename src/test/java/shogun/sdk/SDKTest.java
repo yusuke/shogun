@@ -71,6 +71,45 @@ class SDKTest {
     }
 
     @Test
+    void installLocal() throws IOException {
+        SDK sdk = new SDK();
+        String localDummuyJava = "localJava";
+        try {
+            List<Version> javaList = sdk.list("java");
+            String dummyJDKPath = Files.createTempDirectory("dummyJDK").toAbsolutePath().toString();
+            try {
+                sdk.installLocal("java", "local java", dummyJDKPath);
+                fail("expecting IllegalArgumentException");
+            } catch (IllegalArgumentException e) {
+                assertTrue(e.getMessage().contains("white space"));
+            }
+
+            boolean result = sdk.installLocal("java", localDummuyJava, dummyJDKPath);
+            assertTrue(result);
+            boolean result2 = sdk.installLocal("java", localDummuyJava, dummyJDKPath);
+            // already exists
+            assertFalse(result2);
+
+            List<Version> javaList2 = sdk.list("java");
+            Optional<Version> locallyInstalled = javaList2.stream().filter(e -> e.getIdentifier().equals(localDummuyJava)).findFirst();
+            assertTrue(locallyInstalled.isPresent());
+            locallyInstalled.ifPresent(e -> {
+                        assertEquals(localDummuyJava, e.getIdentifier());
+                        assertEquals("local only", e.getStatus());
+                        assertTrue(e.isLocallyInstalled());
+                        assertEquals(javaList.size() + 1, javaList2.size());
+                        sdk.uninstall("java", localDummuyJava);
+                        List<Version> javaList3 = sdk.list("java");
+                        assertEquals(javaList, javaList3);
+                    }
+            );
+        } finally {
+            sdk.uninstall("java", localDummuyJava);
+        }
+
+    }
+
+    @Test
     void candidates() {
         SDK sdk = new SDK();
         assumeTrue(sdk.isInstalled());

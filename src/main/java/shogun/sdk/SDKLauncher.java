@@ -2,7 +2,7 @@ package shogun.sdk;
 
 import java.io.*;
 
-class SDKLauncher {
+public class SDKLauncher {
 
     /**
      * Run specified command
@@ -10,7 +10,7 @@ class SDKLauncher {
      * @param command Command to run
      * @return output
      */
-    static String exec(String... command) {
+    public static String exec(String... command) {
 
         try {
             File tempFile = File.createTempFile("sdk", "log");

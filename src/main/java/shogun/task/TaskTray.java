@@ -1,10 +1,14 @@
 package shogun.task;
 
 import shogun.sdk.SDK;
+import shogun.sdk.SDKLauncher;
 import shogun.sdk.Version;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
+import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -120,7 +124,7 @@ public class TaskTray {
     private void updateMenu(Menu menu, Version jdk) {
         menu.setLabel(toLabel(jdk));
         menu.removeAll();
-        if (jdk.isInstalled()) {
+        if (jdk.isInstalled() || jdk.isLocallyInstalled()) {
             if (!jdk.isUse()) {
                 MenuItem menuItem = new MenuItem(bundle.getString("makeDefault"));
                 menuItem.addActionListener(e -> setDefault(jdk));
@@ -144,7 +148,7 @@ public class TaskTray {
             menu.add(uninstallItem);
         }
 
-        if (!jdk.isInstalled()) {
+        if (!jdk.isInstalled() && !jdk.isLocallyInstalled()) {
             MenuItem menuItem = new MenuItem(bundle.getString("install"));
             menuItem.addActionListener(e -> install(jdk));
             menu.add(menuItem);
@@ -153,21 +157,31 @@ public class TaskTray {
     }
 
     private void openInTerminal(Version jdk) {
-        jdk.openInTerminal();
+        SDKLauncher.exec("bash", "-c", String.format("osascript -e 'tell application \"Terminal\" to do script \"sdk use java %s\"';osascript -e 'tell application \"Terminal\" to activate'", jdk.getIdentifier()));
     }
 
     private void copyPathToClipboard(Version jdk) {
-        jdk.copyPathToClipboard();
+        Toolkit kit = Toolkit.getDefaultToolkit();
+        Clipboard clip = kit.getSystemClipboard();
+
+        StringSelection ss = new StringSelection(jdk.getPath());
+        clip.setContents(ss, ss);
     }
     private void revealInFinder(Version jdk) {
-        jdk.revealInFinder();
+        ProcessBuilder pb = new ProcessBuilder("open", jdk.getPath());
+        try {
+            Process process = pb.start();
+            process.waitFor();
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     private static String toLabel(Version version) {
         String label = version.isUse() ? ">" : "  ";
         label += version.toString();
         if (version.getStatus().length() != 0) {
-            label += "(" + version.getStatus() + ")";
+            label += " (" + version.getStatus() + ")";
         }
         return label;
     }

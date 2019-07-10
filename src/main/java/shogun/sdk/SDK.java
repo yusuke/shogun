@@ -77,15 +77,37 @@ public class SDK {
     }
 
     private void install(String candidate, String identifier) {
-        runSDK("install " + candidate + " " + identifier);
+        runSDK(String.format("install %s %s", candidate, identifier));
+    }
+
+    /**
+     * @param candidate  candidate
+     * @param identifier identifier
+     * @param path       local path
+     * @return true if the
+     */
+    boolean installLocal(String candidate, String identifier, String path) {
+        if (identifier.contains(" ")) {
+            throw new IllegalArgumentException("identifier should not contain white space(s).");
+        }
+        String result = runSDK(String.format("install %s %s %s", candidate, escape(identifier), escape(path)));
+        return !result.contains("Invalid path!") && !result.contains("already installed.");
+    }
+
+    private String escape(String string) {
+        return string.replaceAll(" ", "\\\\ ");
     }
 
     public void uninstall(String candidate, Version version) {
-        runSDK("uninstall " + candidate + " " + version.getIdentifier());
+        uninstall(candidate, version.getIdentifier());
+    }
+
+    void uninstall(String candidate, String identifier) {
+        runSDK(String.format("uninstall %s %s", candidate, escape(identifier)));
     }
 
     public void makeDefault(String candidate, Version version) {
-        runSDK("default " + candidate + " " + version.getIdentifier());
+        runSDK(String.format("default %s %s", candidate, version.getIdentifier()));
     }
 
     private static String runSDK(String command) {
