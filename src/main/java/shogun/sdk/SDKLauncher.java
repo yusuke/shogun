@@ -3,7 +3,10 @@ package shogun.sdk;
 import org.slf4j.Logger;
 import shogun.logging.LoggerFactory;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.file.Files;
 
 public class SDKLauncher {
     private final static Logger logger = LoggerFactory.getLogger();
@@ -17,35 +20,23 @@ public class SDKLauncher {
     public static String exec(String... command) {
         try {
             File tempFile = File.createTempFile("sdk", "log");
-            command[command.length - 1] = command[command.length - 1] + " >" + tempFile.getAbsolutePath() + " 2>&1";
             logger.debug("Command to be executed: {}", (Object) command);
             ProcessBuilder pb = new ProcessBuilder(command);
+            pb.redirectOutput(ProcessBuilder.Redirect.to(tempFile));
             Process process = pb.start();
-            OutputStream outputStream = process.getOutputStream();
-            PrintWriter printWriter = new PrintWriter(outputStream);
-            // say yes
+            PrintWriter printWriter = new PrintWriter(process.getOutputStream());
+            // say no
             printWriter.write("n\n");
             printWriter.flush();
             process.waitFor();
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            redirectStream(process.getInputStream(), baos);
-            redirectStream(new FileInputStream(tempFile), baos);
-            redirectStream(process.getErrorStream(), baos);
-            String response = trimANSIEscapeCodes(baos.toString());
+            String response = trimANSIEscapeCodes(Files.readString(tempFile.toPath()));
+            //noinspection ResultOfMethodCallIgnored
+            tempFile.delete();
             logger.debug("Response:");
             logger.debug(response);
             return response;
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    private static void redirectStream(InputStream from, OutputStream to) throws IOException {
-        int c;
-        try (InputStream is = from) {
-            while ((c = is.read()) != -1) {
-                to.write(c);
-            }
         }
     }
 
@@ -58,5 +49,4 @@ public class SDKLauncher {
     static String trimANSIEscapeCodes(String escaped) {
         return escaped.replaceAll("\u001B\\[[0-9;]*m", "");
     }
-
 }
