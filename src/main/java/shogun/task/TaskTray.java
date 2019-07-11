@@ -124,19 +124,19 @@ public class TaskTray {
         quitMenu.addActionListener(e -> quit());
         EventQueue.invokeLater(() -> popup.add(quitMenu));
 
-        List<String> candidatesList = new ArrayList<>();
+        List<String> installedCandidates = new ArrayList<>();
         if (sdk.isInstalled()) {
-            candidatesList.addAll(sdk.getInstalledCandidates());
+            sdk.getInstalledCandidates()
+                    .forEach(e -> {
+                        installedCandidates.add(e);
+                        new Candidate(e, sdk.list(e));
+                    });
         }
         if (!sdk.isOffline()) {
             // list available candidates
-            sdk.listCandidates().stream().filter(e -> !candidatesList.contains(e)).forEach(candidatesList::add);
-        }
-
-        for (String candidate : candidatesList) {
-            var original = sdk.list(candidate);
-            Candidate candidate1 = new Candidate(candidate, original);
-            candidate1.refreshMenus();
+            sdk.listCandidates().stream()
+                    .filter(e -> !installedCandidates.contains(e))
+                    .forEach(e -> new Candidate(e, sdk.list(e)));
         }
 
         blinking = false;
@@ -157,7 +157,7 @@ public class TaskTray {
             } else {
                 addToAvailableCandidatesMenu(candidateMenu);
             }
-
+            refreshMenus();
         }
 
         void refreshMenus() {
@@ -304,37 +304,39 @@ public class TaskTray {
         }
 
         private void updateMenu(Menu menu, Version jdk) {
-            menu.setLabel(toLabel(jdk));
-            menu.removeAll();
-            if (jdk.isInstalled() || jdk.isLocallyInstalled()) {
-                if (!jdk.isUse()) {
-                    MenuItem menuItem = new MenuItem(bundle.getString("makeDefault"));
-                    menuItem.addActionListener(e -> setDefault(jdk));
-                    menu.add(menuItem);
+            EventQueue.invokeLater(() -> {
+                menu.setLabel(toLabel(jdk));
+                menu.removeAll();
+                if (jdk.isInstalled() || jdk.isLocallyInstalled()) {
+                    if (!jdk.isUse()) {
+                        MenuItem menuItem = new MenuItem(bundle.getString("makeDefault"));
+                        menuItem.addActionListener(e -> setDefault(jdk));
+                        menu.add(menuItem);
+                    }
+
+                    MenuItem openInTerminalMenu = new MenuItem(getMessage("openInTerminal", jdk.getIdentifier()));
+                    openInTerminalMenu.addActionListener(e -> openInTerminal(jdk));
+                    menu.add(openInTerminalMenu);
+
+                    MenuItem copyPathMenu = new MenuItem(bundle.getString("copyPath"));
+                    copyPathMenu.addActionListener(e -> copyPathToClipboard(jdk));
+                    menu.add(copyPathMenu);
+
+                    MenuItem revealInFinderMenu = new MenuItem(bundle.getString("revealInFinder"));
+                    revealInFinderMenu.addActionListener(e -> revealInFinder(jdk));
+                    menu.add(revealInFinderMenu);
+
+                    MenuItem uninstallItem = new MenuItem(bundle.getString("uninstall"));
+                    uninstallItem.addActionListener(e -> uninstall(jdk));
+                    menu.add(uninstallItem);
                 }
 
-                MenuItem openInTerminalMenu = new MenuItem(getMessage("openInTerminal", jdk.getIdentifier()));
-                openInTerminalMenu.addActionListener(e -> openInTerminal(jdk));
-                menu.add(openInTerminalMenu);
-
-                MenuItem copyPathMenu = new MenuItem(bundle.getString("copyPath"));
-                copyPathMenu.addActionListener(e -> copyPathToClipboard(jdk));
-                menu.add(copyPathMenu);
-
-                MenuItem revealInFinderMenu = new MenuItem(bundle.getString("revealInFinder"));
-                revealInFinderMenu.addActionListener(e -> revealInFinder(jdk));
-                menu.add(revealInFinderMenu);
-
-                MenuItem uninstallItem = new MenuItem(bundle.getString("uninstall"));
-                uninstallItem.addActionListener(e -> uninstall(jdk));
-                menu.add(uninstallItem);
-            }
-
-            if (!jdk.isInstalled() && !jdk.isLocallyInstalled()) {
-                MenuItem menuItem = new MenuItem(bundle.getString("install"));
-                menuItem.addActionListener(e -> install(jdk));
-                menu.add(menuItem);
-            }
+                if (!jdk.isInstalled() && !jdk.isLocallyInstalled()) {
+                    MenuItem menuItem = new MenuItem(bundle.getString("install"));
+                    menuItem.addActionListener(e -> install(jdk));
+                    menu.add(menuItem);
+                }
+            });
         }
     }
 
