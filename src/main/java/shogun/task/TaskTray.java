@@ -25,12 +25,66 @@ public class TaskTray {
     private final static Logger logger = LoggerFactory.getLogger();
     private ResourceBundle bundle = ResourceBundle.getBundle("message", Locale.getDefault());
 
-    private boolean blinking = false;
     private SDK sdk = new SDK();
     private SystemTray tray;
     private TrayIcon icon;
     private PopupMenu popup = new PopupMenu();
     private final Frame thisFrameMakesDialogsAlwaysOnTop = new Frame();
+
+    private DukeThread duke = new DukeThread();
+
+    class DukeThread extends Thread {
+        private boolean dukeRolling = false;
+        List<Image> animatedDuke;
+
+        DukeThread() {
+            setName("Duke roller");
+            setDaemon(true);
+            logger.debug("Loading images.");
+            animatedDuke = new ArrayList<>();
+            for (int i = 0; i < 12; i++) {
+                Image image = Toolkit.getDefaultToolkit().createImage(ClassLoader.getSystemResource("images/duke-64x64-anim" + i + ".png"));
+                animatedDuke.add(image);
+            }
+
+        }
+
+        private void startRoll() {
+            dukeRolling = true;
+            this.interrupt();
+        }
+
+        private void stopRoll() {
+            dukeRolling = false;
+            this.interrupt();
+        }
+
+        public void run() {
+            //noinspection InfiniteLoopStatement
+            while (true) {
+                while (dukeRolling) {
+                    for (Image animation : animatedDuke) {
+                        EventQueue.invokeLater(() -> icon.setImage(animation));
+                        try {
+                            Thread.sleep(100);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        if (!dukeRolling) {
+                            break;
+                        }
+                    }
+                }
+                EventQueue.invokeLater(() -> icon.setImage(animatedDuke.get(0)));
+                try {
+                    synchronized (this) {
+                        wait();
+                    }
+                } catch (InterruptedException ignored) {
+                }
+            }
+        }
+    }
 
     private ImageIcon dialogIcon = new ImageIcon(Toolkit.getDefaultToolkit().createImage(ClassLoader.getSystemResource("images/duke-128x128.png")));
 
@@ -51,18 +105,12 @@ public class TaskTray {
 
     public void show() {
         thisFrameMakesDialogsAlwaysOnTop.setAlwaysOnTop(true);
-
-        logger.debug("Loading images.");
-        List<Image> animatedDuke = new ArrayList<>();
-        for (int i = 0; i < 12; i++) {
-            Image image = Toolkit.getDefaultToolkit().createImage(ClassLoader.getSystemResource("images/duke-64x64-anim" + i + ".png"));
-            animatedDuke.add(image);
-        }
+        duke.start();
 
         EventQueue.invokeLater(() -> {
             logger.debug("Preparing task tray.");
             tray = SystemTray.getSystemTray();
-            icon = new TrayIcon(animatedDuke.get(0), "Shogun", popup);
+            icon = new TrayIcon(duke.animatedDuke.get(0), "Shogun", popup);
             icon.setImageAutoSize(true);
             try {
                 tray.add(icon);
@@ -73,33 +121,6 @@ public class TaskTray {
         executorService.execute(this::initializeMenuItems);
 
 
-        Thread thread = new Thread(() -> {
-            while (true) {
-                while (blinking) {
-                    for (Image animation : animatedDuke) {
-                        EventQueue.invokeLater(() -> icon.setImage(animation));
-                        try {
-                            Thread.sleep(100);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                        if (!blinking) {
-                            break;
-                        }
-                    }
-                }
-                while (!blinking) {
-                    EventQueue.invokeLater(() -> icon.setImage(animatedDuke.get(0)));
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        });
-        thread.setDaemon(true);
-        thread.start();
     }
 
     private void quit() {
@@ -110,7 +131,7 @@ public class TaskTray {
 
     private synchronized void initializeMenuItems() {
         logger.debug("Initializing menu items.");
-        blinking = true;
+        duke.startRoll();
         Menu candidatesMenu = new Menu(bundle.getString("otherCandidates"));
         EventQueue.invokeLater(() -> popup.add(candidatesMenu));
 
@@ -151,7 +172,7 @@ public class TaskTray {
                         new Candidate(e, sdk.list(e));
                     });
         }
-        blinking = false;
+        duke.stopRoll();
     }
 
     class Candidate {
@@ -215,7 +236,7 @@ public class TaskTray {
         void setDefault(Version version) {
             executorService.execute(() -> {
                 logger.debug("Set default: {}", version);
-                blinking = true;
+                duke.startRoll();
                 sdk.makeDefault(version.getCandidate(), version);
                 Menu menu = candidateMenu;
                 Optional<Version> lastDefault = versions.stream().filter(Version::isUse).findFirst();
@@ -232,19 +253,19 @@ public class TaskTray {
                 Menu newDefaultMenu = find(menu, newDefaultVersion);
                 EventQueue.invokeLater(() -> updateMenu(newDefaultMenu, newDefaultVersion));
                 setRootMenuLabel(menu);
-                blinking = false;
+                duke.stopRoll();
             });
         }
 
         void install(Version version) {
             executorService.execute(() -> {
                 logger.debug("Install: {}", version);
-                blinking = true;
                 int response = JOptionPane.showConfirmDialog(thisFrameMakesDialogsAlwaysOnTop,
                         getMessage("confirmInstallMessage", version.getCandidate(), version.toString()),
                         getMessage("confirmInstallTitle", version.getCandidate(), version.toString()), JOptionPane.OK_CANCEL_OPTION,
                         QUESTION_MESSAGE, dialogIcon);
                 if (response == JOptionPane.OK_OPTION) {
+                    duke.startRoll();
                     var wasInstalled = isInstalled();
                     sdk.install(version);
                     versions = sdk.list(candidate);
@@ -255,21 +276,20 @@ public class TaskTray {
                         EventQueue.invokeLater(() -> getAvailableCandidatesMenu().remove(candidateRootMenu));
                         addToInstalledCandidatesMenu(candidateRootMenu);
                     }
+                    duke.stopRoll();
                 }
-                blinking = false;
             });
         }
 
         void uninstall(Version version) {
             executorService.execute(() -> {
                 logger.debug("Uninstall: {}", version);
-                blinking = true;
                 int response = JOptionPane.showConfirmDialog(thisFrameMakesDialogsAlwaysOnTop,
                         getMessage("confirmUninstallMessage", version.getCandidate(), version.toString()),
                         getMessage("confirmUninstallTitle", version.getCandidate(), version.toString()), JOptionPane.OK_CANCEL_OPTION,
                         QUESTION_MESSAGE, dialogIcon);
                 if (response == JOptionPane.OK_OPTION) {
-
+                    duke.startRoll();
                     var wasInstalled = isInstalled();
                     sdk.uninstall(version);
                     versions = sdk.list(candidate);
@@ -280,8 +300,8 @@ public class TaskTray {
                         EventQueue.invokeLater(() -> popup.remove(candidateRootMenu));
                         addToAvailableCandidatesMenu(candidateRootMenu);
                     }
+                    duke.stopRoll();
                 }
-                blinking = false;
             });
         }
 
@@ -357,13 +377,13 @@ public class TaskTray {
     }
 
     private void installSDKMAN() {
-        blinking = true;
         executorService.execute(() -> {
+            duke.startRoll();
             sdk.install();
             EventQueue.invokeLater(() -> popup.removeAll());
             initializeMenuItems();
+            duke.stopRoll();
         });
-        blinking = false;
     }
 
     private void openInTerminal(Version jdk) {
