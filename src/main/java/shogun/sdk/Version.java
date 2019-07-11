@@ -54,12 +54,13 @@ public class Version {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Version version1 = (Version) o;
-        return Objects.equals(version, version1.version);
+        return candidate.equals(version1.candidate) &&
+                version.equals(version1.version);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(version);
+        return Objects.hash(candidate, version);
     }
 
     @Override
