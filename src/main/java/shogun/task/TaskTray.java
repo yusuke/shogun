@@ -1,6 +1,8 @@
 package shogun.task;
 
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import shogun.logging.LoggerFactory;
 import shogun.sdk.SDK;
 import shogun.sdk.SDKLauncher;
 import shogun.sdk.Version;
@@ -20,6 +22,7 @@ import java.util.concurrent.ThreadFactory;
 import static javax.swing.JOptionPane.QUESTION_MESSAGE;
 
 public class TaskTray {
+    private final static Logger logger = LoggerFactory.getLogger();
     private ResourceBundle bundle = ResourceBundle.getBundle("message", Locale.getDefault());
 
     private boolean blinking = false;
@@ -49,6 +52,7 @@ public class TaskTray {
     public void show() {
         thisFrameMakesDialogsAlwaysOnTop.setAlwaysOnTop(true);
 
+        logger.debug("Loading images.");
         List<Image> animatedDuke = new ArrayList<>();
         for (int i = 0; i < 12; i++) {
             Image image = Toolkit.getDefaultToolkit().createImage(ClassLoader.getSystemResource("images/duke-64x64-anim" + i + ".png"));
@@ -56,6 +60,7 @@ public class TaskTray {
         }
 
         EventQueue.invokeLater(() -> {
+            logger.debug("Preparing task tray.");
             tray = SystemTray.getSystemTray();
             icon = new TrayIcon(animatedDuke.get(0), "Shogun", popup);
             icon.setImageAutoSize(true);
@@ -104,11 +109,13 @@ public class TaskTray {
 
 
     private synchronized void initializeMenuItems() {
+        logger.debug("Initializing menu items.");
         blinking = true;
         Menu candidatesMenu = new Menu(bundle.getString("otherCandidates"));
         EventQueue.invokeLater(() -> popup.add(candidatesMenu));
 
         if (!sdk.isInstalled()) {
+            logger.debug("SDKMAN! not installed.");
             MenuItem installMenu = new MenuItem(bundle.getString("installSDKMan"));
             installMenu.addActionListener(e -> installSDKMAN());
             EventQueue.invokeLater(() -> popup.add(installMenu));
@@ -116,6 +123,7 @@ public class TaskTray {
 
         if (sdk.isInstalled()) {
             String version = sdk.getVersion();
+            logger.debug("SDKMAN! version {} detected.", version);
             MenuItem versionLabel = new MenuItem(version + (sdk.isOffline() ? " (offline)" : ""));
             versionLabel.addActionListener(e -> initializeMenuItems());
             EventQueue.invokeLater(() -> popup.add(versionLabel));
@@ -128,17 +136,21 @@ public class TaskTray {
         if (sdk.isInstalled()) {
             sdk.getInstalledCandidates()
                     .forEach(e -> {
+                        logger.debug("Installed candidate: {}", e);
                         installedCandidates.add(e);
                         new Candidate(e, sdk.list(e));
                     });
         }
         if (!sdk.isOffline()) {
+            logger.debug("Offline mode.");
             // list available candidates
             sdk.listCandidates().stream()
                     .filter(e -> !installedCandidates.contains(e))
-                    .forEach(e -> new Candidate(e, sdk.list(e)));
+                    .forEach(e -> {
+                        logger.debug("Available candidate: {}", e);
+                        new Candidate(e, sdk.list(e));
+                    });
         }
-
         blinking = false;
     }
 
@@ -151,6 +163,7 @@ public class TaskTray {
             this.candidate = candidate;
             versions.stream().filter(e -> e.isInstalled() || e.isLocallyInstalled()).forEach(e -> this.versions.add(e));
             versions.stream().filter(e -> !e.isInstalled() && !e.isLocallyInstalled()).forEach(e -> this.versions.add(e));
+            logger.debug("Building menu for : {}", candidate);
             candidateMenu = new Menu(candidate);
             if (isInstalled()) {
                 addToInstalledCandidatesMenu(candidateMenu);
@@ -201,6 +214,7 @@ public class TaskTray {
 
         void setDefault(Version version) {
             executorService.execute(() -> {
+                logger.debug("Set default: {}", version);
                 blinking = true;
                 sdk.makeDefault(version.getCandidate(), version);
                 Menu menu = candidateMenu;
@@ -224,6 +238,7 @@ public class TaskTray {
 
         void install(Version version) {
             executorService.execute(() -> {
+                logger.debug("Install: {}", version);
                 blinking = true;
                 int response = JOptionPane.showConfirmDialog(thisFrameMakesDialogsAlwaysOnTop,
                         getMessage("confirmInstallMessage", version.getCandidate(), version.toString()),
@@ -247,6 +262,7 @@ public class TaskTray {
 
         void uninstall(Version version) {
             executorService.execute(() -> {
+                logger.debug("Uninstall: {}", version);
                 blinking = true;
                 int response = JOptionPane.showConfirmDialog(thisFrameMakesDialogsAlwaysOnTop,
                         getMessage("confirmUninstallMessage", version.getCandidate(), version.toString()),

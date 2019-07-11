@@ -1,15 +1,34 @@
 package shogun.sdk;
 
+import org.slf4j.Logger;
+import shogun.logging.LoggerFactory;
+import uk.org.lidalia.sysoutslf4j.context.SysOutOverSLF4J;
+
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Properties;
 import java.util.stream.Collectors;
 
 public class SDK {
+    private final static Logger logger = LoggerFactory.getLogger();
+    private final static String SHOGUN_VERSION;
 
+    static {
+        SysOutOverSLF4J.sendSystemOutAndErrToSLF4J();
+        Properties p = new Properties();
+        try {
+            p.load(SDK.class.getResourceAsStream("/version.properties"));
+        } catch (IOException e) {
+            logger.debug("exception while loading version.properties", e);
+        }
+        SHOGUN_VERSION = p.getProperty("version", "unknown");
+        logger.info("SHOGUN_VERSION: {}", SHOGUN_VERSION);
+    }
 
     public boolean isInstalled() {
         return Files.exists(Paths.get(getSDK_MAN_DIR() + File.separator + "bin" + File.separator + "sdkman-init.sh"));
@@ -194,7 +213,8 @@ public class SDK {
 
     static String getSDK_MAN_DIR() {
         if (sdkManDir == null) {
-            sdkManDir = SDKLauncher.exec("bash", "-c", "echo $SDKMAN_DIR").trim();
+            sdkManDir = SDKLauncher.exec("bash", "-c", "source ~/.bash_profile;echo $SDKMAN_DIR").trim();
+            logger.debug("SDKMAN_DIR: {}", sdkManDir);
         }
         return sdkManDir;
     }

@@ -18,6 +18,26 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.26</version>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-core</artifactId>
+            <version>1.2.3</version>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>1.2.3</version>
+        </dependency>
+        <dependency>
+            <groupId>uk.org.lidalia</groupId>
+            <artifactId>sysout-over-slf4j</artifactId>
+            <version>1.0.2</version>
+        </dependency>
+        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
             <version>5.5.0</version>
@@ -32,17 +52,34 @@
     </dependencies>
 
     <build>
+
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>3.1.2</version>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.1.1</version>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
                 <configuration>
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                    <finalName>${project.artifactId}-${project.version}.jar</finalName>
                     <archive>
                         <manifest>
-                            <mainClass>shogun.Main</mainClass>
-                            <addClasspath>true</addClasspath>
-                            <addExtensions>false</addExtensions>
+                            <mainClass>shogun.Shogun</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
@@ -78,7 +115,7 @@
                                 <argument>--input</argument>
                                 <argument>${project.build.directory}/</argument>
                                 <argument>--class</argument>
-                                <argument>shogun.Main</argument>
+                                <argument>shogun.Shogun</argument>
                                 <argument>--main-jar</argument>
                                 <argument>./${project.artifactId}-${project.version}.jar</argument>
                                 <argument>--output</argument>
@@ -89,7 +126,7 @@
                                 <argument>--name</argument>
                                 <argument>Shogun</argument>
                                 <argument>--add-modules</argument>
-                                <argument>java.base,java.desktop</argument>
+                                <argument>java.base,java.desktop,java.naming</argument>
                                 <argument>--strip-native-commands</argument>
                             </arguments>
                         </configuration>

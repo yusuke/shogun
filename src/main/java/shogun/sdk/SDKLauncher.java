@@ -1,8 +1,12 @@
 package shogun.sdk;
 
+import org.slf4j.Logger;
+import shogun.logging.LoggerFactory;
+
 import java.io.*;
 
 public class SDKLauncher {
+    private final static Logger logger = LoggerFactory.getLogger();
 
     /**
      * Run specified command
@@ -11,10 +15,10 @@ public class SDKLauncher {
      * @return output
      */
     public static String exec(String... command) {
-
         try {
             File tempFile = File.createTempFile("sdk", "log");
             command[command.length - 1] = command[command.length - 1] + " >" + tempFile.getAbsolutePath() + " 2>&1";
+            logger.debug("Command to be executed: {}", (Object) command);
             ProcessBuilder pb = new ProcessBuilder(command);
             Process process = pb.start();
             OutputStream outputStream = process.getOutputStream();
@@ -27,7 +31,10 @@ public class SDKLauncher {
             redirectStream(process.getInputStream(), baos);
             redirectStream(new FileInputStream(tempFile), baos);
             redirectStream(process.getErrorStream(), baos);
-            return trimANSIEscapeCodes(baos.toString());
+            String response = trimANSIEscapeCodes(baos.toString());
+            logger.debug("Response:");
+            logger.debug(response);
+            return response;
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -37,7 +44,6 @@ public class SDKLauncher {
         int c;
         try (InputStream is = from) {
             while ((c = is.read()) != -1) {
-                System.out.write(c);
                 to.write(c);
             }
         }
