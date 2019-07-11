@@ -31,7 +31,6 @@ public class TaskTray {
 
     private ImageIcon dialogIcon = new ImageIcon(Toolkit.getDefaultToolkit().createImage(ClassLoader.getSystemResource("images/duke-128x128.png")));
 
-
     private final ExecutorService executorService = Executors.newFixedThreadPool(1,
             new ThreadFactory() {
                 int count = 0;
@@ -103,8 +102,6 @@ public class TaskTray {
         System.exit(0);
     }
 
-    private List<Candidate> candidates = new ArrayList<>();
-
 
     private synchronized void initializeMenuItems() {
         blinking = true;
@@ -139,7 +136,6 @@ public class TaskTray {
         for (String candidate : candidatesList) {
             var original = sdk.list(candidate);
             Candidate candidate1 = new Candidate(candidate, original);
-            this.candidates.add(candidate1);
             candidate1.refreshMenus();
         }
 
@@ -204,48 +200,73 @@ public class TaskTray {
         }
 
         void setDefault(Version version) {
-            sdk.makeDefault(version.getCandidate(), version);
-            Menu menu = candidateMenu;
-            Optional<Version> lastDefault = versions.stream().filter(Version::isUse).findFirst();
-            lastDefault.ifPresent(oldDefaultVersion -> {
-                oldDefaultVersion.setUse(false);
-                EventQueue.invokeLater(() -> {
-                    Menu oldDefaultMenu = find(menu, oldDefaultVersion);
-                    updateMenu(oldDefaultMenu, oldDefaultVersion);
+            executorService.execute(() -> {
+                blinking = true;
+                sdk.makeDefault(version.getCandidate(), version);
+                Menu menu = candidateMenu;
+                Optional<Version> lastDefault = versions.stream().filter(Version::isUse).findFirst();
+                lastDefault.ifPresent(oldDefaultVersion -> {
+                    oldDefaultVersion.setUse(false);
+                    EventQueue.invokeLater(() -> {
+                        Menu oldDefaultMenu = find(menu, oldDefaultVersion);
+                        updateMenu(oldDefaultMenu, oldDefaultVersion);
+                    });
                 });
-            });
 
-            Version newDefaultVersion = versions.get(versions.indexOf(version));
-            newDefaultVersion.setUse(true);
-            Menu newDefaultMenu = find(menu, newDefaultVersion);
-            EventQueue.invokeLater(() -> updateMenu(newDefaultMenu, newDefaultVersion));
-            setRootMenuLabel(menu);
+                Version newDefaultVersion = versions.get(versions.indexOf(version));
+                newDefaultVersion.setUse(true);
+                Menu newDefaultMenu = find(menu, newDefaultVersion);
+                EventQueue.invokeLater(() -> updateMenu(newDefaultMenu, newDefaultVersion));
+                setRootMenuLabel(menu);
+                blinking = false;
+            });
         }
 
         void install(Version version) {
-            var wasInstalled = isInstalled();
-            sdk.install(version);
-            versions = sdk.list(candidate);
-            refreshMenus();
-            if (!wasInstalled) {
-                // this candidate wasn't installed. move to installed candidates list
-                Menu candidateRootMenu = candidateMenu;
-                EventQueue.invokeLater(() -> getAvailableCandidatesMenu().remove(candidateRootMenu));
-                addToInstalledCandidatesMenu(candidateRootMenu);
-            }
+            executorService.execute(() -> {
+                blinking = true;
+                int response = JOptionPane.showConfirmDialog(thisFrameMakesDialogsAlwaysOnTop,
+                        getMessage("confirmInstallMessage", version.getCandidate(), version.toString()),
+                        getMessage("confirmInstallTitle", version.getCandidate(), version.toString()), JOptionPane.OK_CANCEL_OPTION,
+                        QUESTION_MESSAGE, dialogIcon);
+                if (response == JOptionPane.OK_OPTION) {
+                    var wasInstalled = isInstalled();
+                    sdk.install(version);
+                    versions = sdk.list(candidate);
+                    refreshMenus();
+                    if (!wasInstalled) {
+                        // this candidate wasn't installed. move to installed candidates list
+                        Menu candidateRootMenu = candidateMenu;
+                        EventQueue.invokeLater(() -> getAvailableCandidatesMenu().remove(candidateRootMenu));
+                        addToInstalledCandidatesMenu(candidateRootMenu);
+                    }
+                }
+                blinking = false;
+            });
         }
 
         void uninstall(Version version) {
-            var wasInstalled = isInstalled();
-            sdk.uninstall(version);
-            versions = sdk.list(candidate);
-            refreshMenus();
-            if (wasInstalled && !isInstalled()) {
-                // no version of this candidate is installed anymore. move to available candidates list
-                Menu candidateRootMenu = candidateMenu;
-                EventQueue.invokeLater(() -> popup.remove(candidateRootMenu));
-                addToAvailableCandidatesMenu(candidateRootMenu);
-            }
+            executorService.execute(() -> {
+                blinking = true;
+                int response = JOptionPane.showConfirmDialog(thisFrameMakesDialogsAlwaysOnTop,
+                        getMessage("confirmUninstallMessage", version.getCandidate(), version.toString()),
+                        getMessage("confirmUninstallTitle", version.getCandidate(), version.toString()), JOptionPane.OK_CANCEL_OPTION,
+                        QUESTION_MESSAGE, dialogIcon);
+                if (response == JOptionPane.OK_OPTION) {
+
+                    var wasInstalled = isInstalled();
+                    sdk.uninstall(version);
+                    versions = sdk.list(candidate);
+                    refreshMenus();
+                    if (wasInstalled && !isInstalled()) {
+                        // no version of this candidate is installed anymore. move to available candidates list
+                        Menu candidateRootMenu = candidateMenu;
+                        EventQueue.invokeLater(() -> popup.remove(candidateRootMenu));
+                        addToAvailableCandidatesMenu(candidateRootMenu);
+                    }
+                }
+                blinking = false;
+            });
         }
 
         void addToInstalledCandidatesMenu(Menu menu) {
@@ -281,6 +302,40 @@ public class TaskTray {
                 EventQueue.invokeLater(() -> otherCandidate.add(menu));
             }
         }
+
+        private void updateMenu(Menu menu, Version jdk) {
+            menu.setLabel(toLabel(jdk));
+            menu.removeAll();
+            if (jdk.isInstalled() || jdk.isLocallyInstalled()) {
+                if (!jdk.isUse()) {
+                    MenuItem menuItem = new MenuItem(bundle.getString("makeDefault"));
+                    menuItem.addActionListener(e -> setDefault(jdk));
+                    menu.add(menuItem);
+                }
+
+                MenuItem openInTerminalMenu = new MenuItem(getMessage("openInTerminal", jdk.getIdentifier()));
+                openInTerminalMenu.addActionListener(e -> openInTerminal(jdk));
+                menu.add(openInTerminalMenu);
+
+                MenuItem copyPathMenu = new MenuItem(bundle.getString("copyPath"));
+                copyPathMenu.addActionListener(e -> copyPathToClipboard(jdk));
+                menu.add(copyPathMenu);
+
+                MenuItem revealInFinderMenu = new MenuItem(bundle.getString("revealInFinder"));
+                revealInFinderMenu.addActionListener(e -> revealInFinder(jdk));
+                menu.add(revealInFinderMenu);
+
+                MenuItem uninstallItem = new MenuItem(bundle.getString("uninstall"));
+                uninstallItem.addActionListener(e -> uninstall(jdk));
+                menu.add(uninstallItem);
+            }
+
+            if (!jdk.isInstalled() && !jdk.isLocallyInstalled()) {
+                MenuItem menuItem = new MenuItem(bundle.getString("install"));
+                menuItem.addActionListener(e -> install(jdk));
+                menu.add(menuItem);
+            }
+        }
     }
 
     private void installSDKMAN() {
@@ -291,41 +346,6 @@ public class TaskTray {
             initializeMenuItems();
         });
         blinking = false;
-    }
-
-    private void updateMenu(Menu menu, Version jdk) {
-        menu.setLabel(toLabel(jdk));
-        menu.removeAll();
-        if (jdk.isInstalled() || jdk.isLocallyInstalled()) {
-            if (!jdk.isUse()) {
-                MenuItem menuItem = new MenuItem(bundle.getString("makeDefault"));
-                menuItem.addActionListener(e -> setDefault(jdk));
-                menu.add(menuItem);
-            }
-
-            MenuItem openInTerminalMenu = new MenuItem(getMessage("openInTerminal", jdk.getIdentifier()));
-            openInTerminalMenu.addActionListener(e -> openInTerminal(jdk));
-            menu.add(openInTerminalMenu);
-
-            MenuItem copyPathMenu = new MenuItem(bundle.getString("copyPath"));
-            copyPathMenu.addActionListener(e -> copyPathToClipboard(jdk));
-            menu.add(copyPathMenu);
-
-            MenuItem revealInFinderMenu = new MenuItem(bundle.getString("revealInFinder"));
-            revealInFinderMenu.addActionListener(e -> revealInFinder(jdk));
-            menu.add(revealInFinderMenu);
-
-            MenuItem uninstallItem = new MenuItem(bundle.getString("uninstall"));
-            uninstallItem.addActionListener(e -> uninstall(jdk));
-            menu.add(uninstallItem);
-        }
-
-        if (!jdk.isInstalled() && !jdk.isLocallyInstalled()) {
-            MenuItem menuItem = new MenuItem(bundle.getString("install"));
-            menuItem.addActionListener(e -> install(jdk));
-            menu.add(menuItem);
-        }
-
     }
 
     private void openInTerminal(Version jdk) {
@@ -359,52 +379,8 @@ public class TaskTray {
         return label;
     }
 
-    private void setDefault(Version newJDK) {
-        executorService.execute(() -> {
-                    blinking = true;
-                    candidates.stream()
-                            .filter(e -> e.candidate.equals(newJDK.getCandidate()))
-                            .findFirst()
-                            .ifPresent(e -> e.setDefault(newJDK));
-                    blinking = false;
-                }
-        );
-    }
-
     private String getMessage(String pattern, String... values) {
         MessageFormat formatter = new MessageFormat(bundle.getString(pattern));
         return formatter.format(values);
     }
-
-    private void install(Version newJDK) {
-        blinking = true;
-        int response = JOptionPane.showConfirmDialog(thisFrameMakesDialogsAlwaysOnTop,
-                getMessage("confirmInstallMessage", newJDK.getCandidate(), newJDK.toString()),
-                getMessage("confirmInstallTitle", newJDK.getCandidate(), newJDK.toString()), JOptionPane.OK_CANCEL_OPTION,
-                QUESTION_MESSAGE, dialogIcon);
-        if (response == JOptionPane.OK_OPTION) {
-            executorService.execute(() -> {
-                Optional<Candidate> installedCandidate = candidates.stream().filter(e -> e.versions.contains(newJDK)).findFirst();
-                installedCandidate.ifPresent(e -> e.install(newJDK));
-            });
-        }
-        blinking = false;
-    }
-
-
-    private void uninstall(Version jdkToBeUninstalled) {
-        blinking = true;
-        int response = JOptionPane.showConfirmDialog(thisFrameMakesDialogsAlwaysOnTop,
-                getMessage("confirmUninstallMessage", jdkToBeUninstalled.getCandidate(), jdkToBeUninstalled.toString()),
-                getMessage("confirmUninstallTitle", jdkToBeUninstalled.getCandidate(), jdkToBeUninstalled.toString()), JOptionPane.OK_CANCEL_OPTION,
-                QUESTION_MESSAGE, dialogIcon);
-        if (response == JOptionPane.OK_OPTION) {
-            executorService.execute(() -> {
-                Optional<Candidate> installedCandidate = candidates.stream().filter(e -> e.versions.contains(jdkToBeUninstalled)).findFirst();
-                installedCandidate.ifPresent(e -> e.uninstall(jdkToBeUninstalled));
-            });
-        }
-        blinking = false;
-    }
-
 }
