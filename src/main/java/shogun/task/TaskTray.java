@@ -29,10 +29,12 @@ public class TaskTray {
     private SDK sdk = new SDK();
     private SystemTray tray;
     private TrayIcon icon;
+    // for the test purpose, set true to skip confirmation dialogs
+    boolean skipConfirmation = false;
     PopupMenu popup = new PopupMenu();
-    Menu availableCandidatesMenu = new Menu(bundle.getString("availableCandidates"));
+    Menu availableCandidatesMenu = new Menu(getMessage(Messages.availableCandidates));
     MenuItem versionMenu = new MenuItem();
-    private MenuItem quitMenu = new MenuItem(bundle.getString("quit"));
+    private MenuItem quitMenu = new MenuItem(getMessage(Messages.quit));
 
     private final Frame thisFrameMakesDialogsAlwaysOnTop = new Frame();
     private List<Image> animatedDuke;
@@ -200,14 +202,14 @@ public class TaskTray {
             label = version + (sdk.isOffline() ? " (offline)" : "");
         } else {
             logger.debug("SDKMAN! not installed.");
-            label = bundle.getString("installSDKMan");
+            label = getMessage(Messages.installSDKMan);
         }
         EventQueue.invokeLater(() -> versionMenu.setLabel(label));
     }
 
     class Candidate {
         private final String candidate;
-        private List<Version> versions = new ArrayList<>();
+        private List<Version> versions;
         Menu candidateMenu;
 
         Candidate(String candidate, boolean installed) {
@@ -222,6 +224,7 @@ public class TaskTray {
         }
 
         void setVersions() {
+            this.versions = new ArrayList<>();
             List<Version> versions = sdk.list(candidate);
             versions.stream().filter(e -> e.isInstalled() || e.isLocallyInstalled()).forEach(e -> this.versions.add(e));
             versions.stream().filter(e -> !e.isInstalled() && !e.isLocallyInstalled()).forEach(e -> this.versions.add(e));
@@ -229,8 +232,11 @@ public class TaskTray {
         }
 
         void refreshMenus() {
-            EventQueue.invokeLater(() -> setRootMenuLabel(candidateMenu));
-            EventQueue.invokeLater(candidateMenu::removeAll);
+            EventQueue.invokeLater(() -> {
+                setRootMenuLabel(candidateMenu);
+                candidateMenu.removeAll();
+            });
+
             for (Version jdk : versions) {
                 Menu jdkMenuItem = new Menu(toLabel(jdk));
                 updateMenu(jdkMenuItem, jdk);
@@ -290,10 +296,11 @@ public class TaskTray {
         void install(Version version) {
             executorService.execute(() -> {
                 logger.debug("Install: {}", version);
-                int response = JOptionPane.showConfirmDialog(thisFrameMakesDialogsAlwaysOnTop,
-                        getMessage("confirmInstallMessage", version.getCandidate(), version.toString()),
-                        getMessage("confirmInstallTitle", version.getCandidate(), version.toString()), JOptionPane.OK_CANCEL_OPTION,
-                        QUESTION_MESSAGE, dialogIcon);
+                int response = skipConfirmation ? JOptionPane.OK_OPTION :
+                        JOptionPane.showConfirmDialog(thisFrameMakesDialogsAlwaysOnTop,
+                                getMessage(Messages.confirmInstallMessage, version.getCandidate(), version.toString()),
+                                getMessage(Messages.confirmInstallTitle, version.getCandidate(), version.toString()), JOptionPane.OK_CANCEL_OPTION,
+                                QUESTION_MESSAGE, dialogIcon);
                 if (response == JOptionPane.OK_OPTION) {
                     duke.startRoll();
                     var wasInstalled = isInstalled();
@@ -314,10 +321,11 @@ public class TaskTray {
         void uninstall(Version version) {
             executorService.execute(() -> {
                 logger.debug("Uninstall: {}", version);
-                int response = JOptionPane.showConfirmDialog(thisFrameMakesDialogsAlwaysOnTop,
-                        getMessage("confirmUninstallMessage", version.getCandidate(), version.toString()),
-                        getMessage("confirmUninstallTitle", version.getCandidate(), version.toString()), JOptionPane.OK_CANCEL_OPTION,
-                        QUESTION_MESSAGE, dialogIcon);
+                int response = skipConfirmation ? JOptionPane.OK_OPTION :
+                        JOptionPane.showConfirmDialog(thisFrameMakesDialogsAlwaysOnTop,
+                                getMessage(Messages.confirmUninstallMessage, version.getCandidate(), version.toString()),
+                                getMessage(Messages.confirmUninstallTitle, version.getCandidate(), version.toString()), JOptionPane.OK_CANCEL_OPTION,
+                                QUESTION_MESSAGE, dialogIcon);
                 if (response == JOptionPane.OK_OPTION) {
                     duke.startRoll();
                     var wasInstalled = isInstalled();
@@ -374,30 +382,30 @@ public class TaskTray {
                 menu.removeAll();
                 if (jdk.isInstalled() || jdk.isLocallyInstalled()) {
                     if (!jdk.isUse()) {
-                        MenuItem menuItem = new MenuItem(bundle.getString("makeDefault"));
+                        MenuItem menuItem = new MenuItem(getMessage(Messages.makeDefault));
                         menuItem.addActionListener(e -> setDefault(jdk));
                         menu.add(menuItem);
                     }
 
-                    MenuItem openInTerminalMenu = new MenuItem(getMessage("openInTerminal", jdk.getIdentifier()));
+                    MenuItem openInTerminalMenu = new MenuItem(getMessage(Messages.openInTerminal, jdk.getIdentifier()));
                     openInTerminalMenu.addActionListener(e -> openInTerminal(jdk));
                     menu.add(openInTerminalMenu);
 
-                    MenuItem copyPathMenu = new MenuItem(bundle.getString("copyPath"));
+                    MenuItem copyPathMenu = new MenuItem(getMessage(Messages.copyPath));
                     copyPathMenu.addActionListener(e -> copyPathToClipboard(jdk));
                     menu.add(copyPathMenu);
 
-                    MenuItem revealInFinderMenu = new MenuItem(bundle.getString("revealInFinder"));
+                    MenuItem revealInFinderMenu = new MenuItem(getMessage(Messages.revealInFinder));
                     revealInFinderMenu.addActionListener(e -> revealInFinder(jdk));
                     menu.add(revealInFinderMenu);
 
-                    MenuItem uninstallItem = new MenuItem(bundle.getString("uninstall"));
+                    MenuItem uninstallItem = new MenuItem(getMessage(Messages.uninstall));
                     uninstallItem.addActionListener(e -> uninstall(jdk));
                     menu.add(uninstallItem);
                 }
 
                 if (!jdk.isInstalled() && !jdk.isLocallyInstalled()) {
-                    MenuItem menuItem = new MenuItem(bundle.getString("install"));
+                    MenuItem menuItem = new MenuItem(getMessage(Messages.install));
                     menuItem.addActionListener(e -> install(jdk));
                     menu.add(menuItem);
                 }
@@ -445,8 +453,8 @@ public class TaskTray {
         return label;
     }
 
-    private String getMessage(String pattern, String... values) {
-        MessageFormat formatter = new MessageFormat(bundle.getString(pattern));
+    String getMessage(Messages message, String... values) {
+        MessageFormat formatter = new MessageFormat(bundle.getString(message.name()));
         return formatter.format(values);
     }
 }

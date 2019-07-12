@@ -204,7 +204,7 @@ public class SDK {
         runSDK(String.format("default %s %s", candidate, version.getIdentifier()));
     }
 
-    private static String runSDK(String command) {
+    public static String runSDK(String command) {
         return SDKLauncher.exec("bash", "-c", String.format("source %s/bin/sdkman-init.sh;sdk %s", getSDK_MAN_DIR(), command)).trim();
     }
 
