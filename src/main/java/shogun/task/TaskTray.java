@@ -28,11 +28,21 @@ public class TaskTray {
     private SDK sdk = new SDK();
     private SystemTray tray;
     private TrayIcon icon;
-    private PopupMenu popup = new PopupMenu();
+    PopupMenu popup = new PopupMenu();
+    Menu candidatesMenu = new Menu(bundle.getString("otherCandidates"));
+    MenuItem versionMenu;
+    private MenuItem quitMenu;
+
     private final Frame thisFrameMakesDialogsAlwaysOnTop = new Frame();
+
+    public TaskTray() {
+        quitMenu = new MenuItem(bundle.getString("quit"));
+        quitMenu.addActionListener(e -> quit());
+    }
 
     private DukeThread duke = new DukeThread();
 
+    final Object lock = new Object();
     class DukeThread extends Thread {
         private boolean dukeRolling = false;
         List<Image> animatedDuke;
@@ -51,12 +61,19 @@ public class TaskTray {
 
         private void startRoll() {
             dukeRolling = true;
-            this.interrupt();
+            synchronized (this) {
+                this.notify();
+            }
         }
 
         private void stopRoll() {
             dukeRolling = false;
-            this.interrupt();
+            synchronized (this) {
+                this.notify();
+            }
+            synchronized (lock) {
+                lock.notifyAll();
+            }
         }
 
         public void run() {
@@ -67,8 +84,7 @@ public class TaskTray {
                         EventQueue.invokeLater(() -> icon.setImage(animation));
                         try {
                             Thread.sleep(100);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
+                        } catch (InterruptedException ignore) {
                         }
                         if (!dukeRolling) {
                             break;
@@ -132,47 +148,49 @@ public class TaskTray {
     private synchronized void initializeMenuItems() {
         logger.debug("Initializing menu items.");
         duke.startRoll();
-        Menu candidatesMenu = new Menu(bundle.getString("otherCandidates"));
-        EventQueue.invokeLater(() -> popup.add(candidatesMenu));
+        try {
+            EventQueue.invokeLater(() -> popup.removeAll());
+            EventQueue.invokeLater(() -> candidatesMenu.removeAll());
+            EventQueue.invokeLater(() -> popup.add(candidatesMenu));
 
-        if (!sdk.isInstalled()) {
-            logger.debug("SDKMAN! not installed.");
-            MenuItem installMenu = new MenuItem(bundle.getString("installSDKMan"));
-            installMenu.addActionListener(e -> installSDKMAN());
-            EventQueue.invokeLater(() -> popup.add(installMenu));
-        }
+            if (!sdk.isInstalled()) {
+                logger.debug("SDKMAN! not installed.");
+                MenuItem installMenu = new MenuItem(bundle.getString("installSDKMan"));
+                installMenu.addActionListener(e -> installSDKMAN());
+                EventQueue.invokeLater(() -> popup.add(installMenu));
+            }
 
-        if (sdk.isInstalled()) {
-            String version = sdk.getVersion();
-            logger.debug("SDKMAN! version {} detected.", version);
-            MenuItem versionLabel = new MenuItem(version + (sdk.isOffline() ? " (offline)" : ""));
-            versionLabel.addActionListener(e -> initializeMenuItems());
-            EventQueue.invokeLater(() -> popup.add(versionLabel));
-        }
-        MenuItem quitMenu = new MenuItem(bundle.getString("quit"));
-        quitMenu.addActionListener(e -> quit());
-        EventQueue.invokeLater(() -> popup.add(quitMenu));
+            if (sdk.isInstalled()) {
+                String version = sdk.getVersion();
+                logger.debug("SDKMAN! version {} detected.", version);
+                versionMenu = new MenuItem(version + (sdk.isOffline() ? " (offline)" : ""));
+                versionMenu.addActionListener(e -> initializeMenuItems());
+                EventQueue.invokeLater(() -> popup.add(versionMenu));
+            }
+            EventQueue.invokeLater(() -> popup.add(quitMenu));
 
-        List<String> installedCandidates = new ArrayList<>();
-        if (sdk.isInstalled()) {
-            sdk.getInstalledCandidates()
-                    .forEach(e -> {
-                        logger.debug("Installed candidate: {}", e);
-                        installedCandidates.add(e);
-                        new Candidate(e, sdk.list(e));
-                    });
+            List<String> installedCandidates = new ArrayList<>();
+            if (sdk.isInstalled()) {
+                sdk.getInstalledCandidates()
+                        .forEach(e -> {
+                            logger.debug("Installed candidate: {}", e);
+                            installedCandidates.add(e);
+                            new Candidate(e, sdk.list(e));
+                        });
+            }
+            if (!sdk.isOffline()) {
+                logger.debug("Offline mode.");
+                // list available candidates
+                sdk.listCandidates().stream()
+                        .filter(e -> !installedCandidates.contains(e))
+                        .forEach(e -> {
+                            logger.debug("Available candidate: {}", e);
+                            new Candidate(e, sdk.list(e));
+                        });
+            }
+        } finally {
+            duke.stopRoll();
         }
-        if (!sdk.isOffline()) {
-            logger.debug("Offline mode.");
-            // list available candidates
-            sdk.listCandidates().stream()
-                    .filter(e -> !installedCandidates.contains(e))
-                    .forEach(e -> {
-                        logger.debug("Available candidate: {}", e);
-                        new Candidate(e, sdk.list(e));
-                    });
-        }
-        duke.stopRoll();
     }
 
     class Candidate {
@@ -229,10 +247,6 @@ public class TaskTray {
             throw new IllegalStateException("menu not found");
         }
 
-        Menu getAvailableCandidatesMenu() {
-            return (Menu) popup.getItem(popup.getItemCount() - 3);
-        }
-
         void setDefault(Version version) {
             executorService.execute(() -> {
                 logger.debug("Set default: {}", version);
@@ -273,7 +287,7 @@ public class TaskTray {
                     if (!wasInstalled) {
                         // this candidate wasn't installed. move to installed candidates list
                         Menu candidateRootMenu = candidateMenu;
-                        EventQueue.invokeLater(() -> getAvailableCandidatesMenu().remove(candidateRootMenu));
+                        EventQueue.invokeLater(() -> candidatesMenu.remove(candidateRootMenu));
                         addToInstalledCandidatesMenu(candidateRootMenu);
                     }
                     duke.stopRoll();
@@ -324,7 +338,7 @@ public class TaskTray {
 
         void addToAvailableCandidatesMenu(Menu menu) {
             boolean added = false;
-            Menu otherCandidate = getAvailableCandidatesMenu();
+            Menu otherCandidate = candidatesMenu;
             for (int i = 0; i < otherCandidate.getItemCount(); i++) {
                 Menu item = (Menu) otherCandidate.getItem(i);
                 if (0 < item.getLabel().compareTo(candidate)) {
