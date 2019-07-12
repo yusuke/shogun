@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.List;
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -34,29 +35,31 @@ public class TaskTray {
     private MenuItem quitMenu;
 
     private final Frame thisFrameMakesDialogsAlwaysOnTop = new Frame();
+    private List<Image> animatedDuke;
+    private DukeThread duke;
 
     public TaskTray() {
         quitMenu = new MenuItem(bundle.getString("quit"));
         quitMenu.addActionListener(e -> quit());
+        animatedDuke = new ArrayList<>();
+        logger.debug("Loading Duke images.");
+        for (int i = 0; i < 12; i++) {
+            Image image = Toolkit.getDefaultToolkit().createImage(ClassLoader.getSystemResource("images/duke-64x64-anim" + i + ".png"));
+            animatedDuke.add(image);
+        }
+        duke = new DukeThread();
     }
 
-    private DukeThread duke = new DukeThread();
 
-    final Object lock = new Object();
+    CountDownLatch lock = new CountDownLatch(0);
+
     class DukeThread extends Thread {
         private boolean dukeRolling = false;
-        List<Image> animatedDuke;
+
 
         DukeThread() {
             setName("Duke roller");
             setDaemon(true);
-            logger.debug("Loading images.");
-            animatedDuke = new ArrayList<>();
-            for (int i = 0; i < 12; i++) {
-                Image image = Toolkit.getDefaultToolkit().createImage(ClassLoader.getSystemResource("images/duke-64x64-anim" + i + ".png"));
-                animatedDuke.add(image);
-            }
-
         }
 
         private void startRoll() {
@@ -71,9 +74,7 @@ public class TaskTray {
             synchronized (this) {
                 this.notify();
             }
-            synchronized (lock) {
-                lock.notifyAll();
-            }
+            lock.countDown();
         }
 
         public void run() {
@@ -121,12 +122,10 @@ public class TaskTray {
 
     public void show() {
         thisFrameMakesDialogsAlwaysOnTop.setAlwaysOnTop(true);
-        duke.start();
-
         EventQueue.invokeLater(() -> {
             logger.debug("Preparing task tray.");
             tray = SystemTray.getSystemTray();
-            icon = new TrayIcon(duke.animatedDuke.get(0), "Shogun", popup);
+            icon = new TrayIcon(animatedDuke.get(0), "Shogun", popup);
             icon.setImageAutoSize(true);
             try {
                 tray.add(icon);
@@ -134,9 +133,8 @@ public class TaskTray {
                 quit();
             }
         });
+        duke.start();
         executorService.execute(this::initializeMenuItems);
-
-
     }
 
     private void quit() {
@@ -164,18 +162,19 @@ public class TaskTray {
                 String version = sdk.getVersion();
                 logger.debug("SDKMAN! version {} detected.", version);
                 versionMenu = new MenuItem(version + (sdk.isOffline() ? " (offline)" : ""));
-                versionMenu.addActionListener(e -> initializeMenuItems());
+                versionMenu.addActionListener(e -> executorService.execute(this::initializeMenuItems));
                 EventQueue.invokeLater(() -> popup.add(versionMenu));
             }
             EventQueue.invokeLater(() -> popup.add(quitMenu));
 
             List<String> installedCandidates = new ArrayList<>();
+            List<Candidate> candidates = new ArrayList<>();
             if (sdk.isInstalled()) {
                 sdk.getInstalledCandidates()
                         .forEach(e -> {
                             logger.debug("Installed candidate: {}", e);
                             installedCandidates.add(e);
-                            new Candidate(e, sdk.list(e));
+                            candidates.add(new Candidate(e, true));
                         });
             }
             if (!sdk.isOffline()) {
@@ -185,9 +184,11 @@ public class TaskTray {
                         .filter(e -> !installedCandidates.contains(e))
                         .forEach(e -> {
                             logger.debug("Available candidate: {}", e);
-                            new Candidate(e, sdk.list(e));
+                            installedCandidates.add(e);
+                            candidates.add(new Candidate(e, false));
                         });
             }
+            candidates.forEach(Candidate::setVersions);
         } finally {
             duke.stopRoll();
         }
@@ -198,17 +199,21 @@ public class TaskTray {
         private List<Version> versions = new ArrayList<>();
         Menu candidateMenu;
 
-        Candidate(String candidate, List<Version> versions) {
+        Candidate(String candidate, boolean installed) {
             this.candidate = candidate;
-            versions.stream().filter(e -> e.isInstalled() || e.isLocallyInstalled()).forEach(e -> this.versions.add(e));
-            versions.stream().filter(e -> !e.isInstalled() && !e.isLocallyInstalled()).forEach(e -> this.versions.add(e));
             logger.debug("Building menu for : {}", candidate);
             candidateMenu = new Menu(candidate);
-            if (isInstalled()) {
+            if (installed) {
                 addToInstalledCandidatesMenu(candidateMenu);
             } else {
                 addToAvailableCandidatesMenu(candidateMenu);
             }
+        }
+
+        void setVersions() {
+            List<Version> versions = sdk.list(candidate);
+            versions.stream().filter(e -> e.isInstalled() || e.isLocallyInstalled()).forEach(e -> this.versions.add(e));
+            versions.stream().filter(e -> !e.isInstalled() && !e.isLocallyInstalled()).forEach(e -> this.versions.add(e));
             refreshMenus();
         }
 
