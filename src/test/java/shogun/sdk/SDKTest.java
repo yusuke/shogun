@@ -65,21 +65,25 @@ class SDKTest {
     @Test
     void installUninstall() {
         SDK sdk = new SDK();
-        List<Version> java = sdk.list("java");
+        List<Version> java = sdk.list("ant");
         Optional<Version> notInstalled = java.stream().filter(e -> !e.getStatus().equals("installed")).findFirst();
         notInstalled.ifPresent(e -> {
                     // install the sdk
             sdk.install(e);
-                    List<Version> newSDKs = sdk.list("java");
+            List<Version> newSDKs = sdk.list("ant");
                     Optional<Version> installed = newSDKs.stream().filter(e2 -> e2.getIdentifier().equals(e.getIdentifier())).findFirst();
                     assertTrue(installed.isPresent());
             assertTrue(installed.get().isInstalled());
+            sdk.makeDefault("ant", installed.get());
+            assertTrue(installed.get().isUse());
                     // uninstall the sdk
             sdk.uninstall(e);
-                    List<Version> uninstalledSDK = sdk.list("java");
+            List<Version> uninstalledSDK = sdk.list("ant");
                     Optional<Version> uninstalled = uninstalledSDK.stream().filter(e2 -> e2.getIdentifier().equals(e.getIdentifier())).findFirst();
                     assertTrue(uninstalled.isPresent());
             assertFalse(uninstalled.get().isInstalled());
+            assertTrue(uninstalled.get().isArchived());
+            assertFalse(installed.get().isUse());
                 }
         );
     }
@@ -95,27 +99,27 @@ class SDKTest {
         assertFalse(versions.get(0) instanceof JavaVersion);
         Version jdk14 = versions.get(0);
         assertEquals("jdk-14", jdk14.getVersion());
-        assertFalse(jdk14.isUse());
-        assertTrue(jdk14.isInstalled());
+        assertFalse(jdk14.use);
+        assertEquals("installed", jdk14.getStatus());
 
         Version hsadpt80212 = versions.get(1);
         assertEquals("8.0.212.hs-adpt", hsadpt80212.getVersion());
-        assertFalse(hsadpt80212.isUse());
+        assertFalse(hsadpt80212.use);
         assertTrue(hsadpt80212.isInstalled());
 
         Version hsadpt1201 = versions.get(2);
         assertEquals("12.0.1.hs-adpt", hsadpt1201.getVersion());
-        assertFalse(hsadpt1201.isUse());
+        assertFalse(hsadpt1201.use);
         assertTrue(hsadpt1201.isInstalled());
 
         Version hsadpt1103 = versions.get(3);
         assertEquals("11.0.3.hs-adpt", hsadpt1103.getVersion());
-        assertTrue(hsadpt1103.isUse());
+        assertTrue(hsadpt1103.use);
         assertTrue(hsadpt1103.isInstalled());
 
         Version librca1103 = versions.get(4);
         assertEquals("11.0.3-librca", librca1103.getVersion());
-        assertFalse(librca1103.isUse());
+        assertFalse(librca1103.use);
         assertTrue(librca1103.isInstalled());
     }
 
@@ -130,8 +134,8 @@ class SDKTest {
         assertFalse(versions.get(0) instanceof JavaVersion);
         Version jdk14 = versions.get(0);
         assertEquals("jdk-14", jdk14.getVersion());
-        assertFalse(jdk14.isUse());
-        assertTrue(jdk14.isInstalled());
+        assertFalse(jdk14.use);
+        assertEquals("installed", jdk14.getStatus());
 
         Version hsadpt80212 = versions.get(1);
         assertEquals("8.0.212.hs-adpt", hsadpt80212.getVersion());
@@ -140,8 +144,7 @@ class SDKTest {
 
         Version hsadpt1201 = versions.get(2);
         assertEquals("12.0.1.hs-adpt", hsadpt1201.getVersion());
-        assertFalse(hsadpt1201.isUse());
-        assertTrue(hsadpt1201.isInstalled());
+        assertEquals("installed", hsadpt1201.getStatus());
 
         Version hsadpt1103 = versions.get(3);
         assertEquals("11.0.3.hs-adpt", hsadpt1103.getVersion());
@@ -150,8 +153,7 @@ class SDKTest {
 
         Version librca1103 = versions.get(4);
         assertEquals("11.0.3-librca", librca1103.getVersion());
-        assertTrue(librca1103.isUse());
-        assertTrue(librca1103.isInstalled());
+        assertEquals("installed", hsadpt1201.getStatus());
     }
 
     @Test
@@ -236,25 +238,25 @@ class SDKTest {
 
         assertEquals("3.6.1", versions.get(0).getVersion());
         assertEquals("3.6.1", versions.get(0).getIdentifier());
-        assertTrue(versions.get(0).isUse());
+        assertTrue(versions.get(0).use);
         assertTrue(versions.get(0).isInstalled());
         assertFalse(versions.get(0).isLocallyInstalled());
 
         assertEquals("3.6.0", versions.get(1).getVersion());
         assertEquals("3.6.0", versions.get(1).getIdentifier());
-        assertFalse(versions.get(1).isUse());
+        assertFalse(versions.get(1).use);
         assertFalse(versions.get(1).isInstalled());
         assertFalse(versions.get(1).isLocallyInstalled());
 
         assertEquals("3.5.4", versions.get(2).getVersion());
         assertEquals("3.5.4", versions.get(2).getIdentifier());
-        assertFalse(versions.get(2).isUse());
-        assertTrue(versions.get(2).isInstalled());
+        assertFalse(versions.get(2).use);
+        assertEquals("installed", versions.get(2).getStatus());
         assertFalse(versions.get(2).isLocallyInstalled());
 
         assertEquals("2.2.1", versions.get(7).getVersion());
         assertEquals("2.2.1", versions.get(7).getIdentifier());
-        assertFalse(versions.get(7).isUse());
+        assertFalse(versions.get(7).use);
         assertFalse(versions.get(7).isInstalled());
         assertTrue(versions.get(7).isLocallyInstalled());
     }
@@ -269,7 +271,7 @@ class SDKTest {
         assertEquals(34, versions.size());
         JavaVersion adoptOpenJDK = (JavaVersion) versions.get(0);
         assertEquals("AdoptOpenJDK", adoptOpenJDK.getVendor());
-        assertTrue(adoptOpenJDK.isUse());
+        assertTrue(adoptOpenJDK.use);
         assertEquals("12.0.1.j9", adoptOpenJDK.getVersion());
         assertEquals("adpt", adoptOpenJDK.getDist());
         assertEquals("installed", adoptOpenJDK.getStatus());
@@ -277,7 +279,7 @@ class SDKTest {
 
         JavaVersion adoptOpenJDK2 = (JavaVersion) versions.get(1);
         assertEquals("AdoptOpenJDK", adoptOpenJDK2.getVendor());
-        assertFalse(adoptOpenJDK2.isUse());
+        assertFalse(adoptOpenJDK2.use);
         assertEquals("12.0.1.hs", adoptOpenJDK2.getVersion());
         assertEquals("adpt", adoptOpenJDK2.getDist());
         assertEquals("", adoptOpenJDK2.getStatus());
@@ -286,7 +288,7 @@ class SDKTest {
         JavaVersion sap2 = (JavaVersion) versions.get(versions.size() - 1);
 
         assertEquals("SAP", sap2.getVendor());
-        assertFalse(sap2.isUse());
+        assertFalse(sap2.use);
         assertEquals("11.0.3", sap2.getVersion());
         assertEquals("sapmchn", sap2.getDist());
         assertEquals("", sap2.getStatus());
