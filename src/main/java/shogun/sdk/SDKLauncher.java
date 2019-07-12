@@ -3,10 +3,7 @@ package shogun.sdk;
 import org.slf4j.Logger;
 import shogun.logging.LoggerFactory;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.nio.file.Files;
+import java.io.*;
 
 public class SDKLauncher {
     private final static Logger logger = LoggerFactory.getLogger();
@@ -22,24 +19,32 @@ public class SDKLauncher {
             File tempFile = File.createTempFile("sdk", "log");
             logger.debug("Command to be executed: {}", (Object) command);
             ProcessBuilder pb = new ProcessBuilder(command);
-            pb.redirectOutput(ProcessBuilder.Redirect.to(tempFile));
             Process process = pb.start();
-            PrintWriter printWriter = new PrintWriter(process.getOutputStream());
-            // say no
+            OutputStream outputStream = process.getOutputStream();
+            PrintWriter printWriter = new PrintWriter(outputStream);
+            // say yes
             printWriter.write("n\n");
             printWriter.flush();
             process.waitFor();
-            String response = trimANSIEscapeCodes(Files.readString(tempFile.toPath()));
-            //noinspection ResultOfMethodCallIgnored
-            tempFile.delete();
-            logger.debug("Response:");
-            logger.debug(response);
-            return response;
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            redirectStream(process.getInputStream(), baos);
+            redirectStream(new FileInputStream(tempFile), baos);
+            redirectStream(process.getErrorStream(), baos);
+            return trimANSIEscapeCodes(baos.toString());
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
 
+    private static void redirectStream(InputStream from, OutputStream to) throws IOException {
+        int c;
+        try (InputStream is = from) {
+            while ((c = is.read()) != -1) {
+                System.out.write(c);
+                to.write(c);
+            }
+        }
+    }
     /**
      * trim ANSI escape codes to decorate terminal characters
      *
