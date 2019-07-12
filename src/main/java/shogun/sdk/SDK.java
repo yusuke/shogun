@@ -110,14 +110,15 @@ public class SDK {
             }
         }
         List<Version> versionList = new ArrayList<>();
-        int numberOfColumns = versionListList.get(0).size();
-        for (int i = 0; i < numberOfColumns; i++) {
-            for (List<Version> versions : versionListList) {
-                if (i < versions.size()) {
-                    versionList.add(versions.get(i));
+        if (0 < versionListList.size()) {
+            int numberOfColumns = versionListList.get(0).size();
+            for (int i = 0; i < numberOfColumns; i++) {
+                for (List<Version> versions : versionListList) {
+                    if (i < versions.size()) {
+                        versionList.add(versions.get(i));
+                    }
                 }
             }
-
         }
         return versionList;
     }
