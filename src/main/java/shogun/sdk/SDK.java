@@ -2,7 +2,6 @@ package shogun.sdk;
 
 import org.slf4j.Logger;
 import shogun.logging.LoggerFactory;
-import uk.org.lidalia.sysoutslf4j.context.SysOutOverSLF4J;
 
 import java.io.File;
 import java.io.IOException;
@@ -19,7 +18,6 @@ public class SDK {
     private final static String SHOGUN_VERSION;
 
     static {
-        SysOutOverSLF4J.sendSystemOutAndErrToSLF4J();
         Properties p = new Properties();
         try {
             p.load(SDK.class.getResourceAsStream("/version.properties"));
