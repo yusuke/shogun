@@ -24,7 +24,7 @@ class TaskTrayTest {
         assertEquals(installedCandidates.size() + menuCount, taskTray.popup.getItemCount(), "showing all installed candidates");
         List<String> strings = sdk.listCandidates();
         int numberOfAvailableCandidates = strings.size() - installedCandidates.size();
-        Menu availableCandidatesMenu = taskTray.candidatesMenu;
+        Menu availableCandidatesMenu = taskTray.availableCandidatesMenu;
         assertEquals(numberOfAvailableCandidates, availableCandidatesMenu.getItemCount(), "showing all available candidates");
 
         // click version menu

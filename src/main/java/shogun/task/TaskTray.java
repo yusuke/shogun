@@ -29,7 +29,7 @@ public class TaskTray {
     private SystemTray tray;
     private TrayIcon icon;
     PopupMenu popup = new PopupMenu();
-    Menu candidatesMenu = new Menu(bundle.getString("otherCandidates"));
+    Menu availableCandidatesMenu = new Menu(bundle.getString("availableCandidates"));
     MenuItem versionMenu;
     private MenuItem quitMenu;
 
@@ -150,8 +150,8 @@ public class TaskTray {
         duke.startRoll();
         try {
             EventQueue.invokeLater(() -> popup.removeAll());
-            EventQueue.invokeLater(() -> candidatesMenu.removeAll());
-            EventQueue.invokeLater(() -> popup.add(candidatesMenu));
+            EventQueue.invokeLater(() -> availableCandidatesMenu.removeAll());
+            EventQueue.invokeLater(() -> popup.add(availableCandidatesMenu));
 
             if (!sdk.isInstalled()) {
                 logger.debug("SDKMAN! not installed.");
@@ -287,7 +287,7 @@ public class TaskTray {
                     if (!wasInstalled) {
                         // this candidate wasn't installed. move to installed candidates list
                         Menu candidateRootMenu = candidateMenu;
-                        EventQueue.invokeLater(() -> candidatesMenu.remove(candidateRootMenu));
+                        EventQueue.invokeLater(() -> availableCandidatesMenu.remove(candidateRootMenu));
                         addToInstalledCandidatesMenu(candidateRootMenu);
                     }
                     duke.stopRoll();
@@ -338,18 +338,17 @@ public class TaskTray {
 
         void addToAvailableCandidatesMenu(Menu menu) {
             boolean added = false;
-            Menu otherCandidate = candidatesMenu;
-            for (int i = 0; i < otherCandidate.getItemCount(); i++) {
-                Menu item = (Menu) otherCandidate.getItem(i);
+            for (int i = 0; i < availableCandidatesMenu.getItemCount(); i++) {
+                Menu item = (Menu) availableCandidatesMenu.getItem(i);
                 if (0 < item.getLabel().compareTo(candidate)) {
                     int index = i;
-                    EventQueue.invokeLater(() -> otherCandidate.insert(menu, index));
+                    EventQueue.invokeLater(() -> availableCandidatesMenu.insert(menu, index));
                     added = true;
                     break;
                 }
             }
             if (!added) {
-                EventQueue.invokeLater(() -> otherCandidate.add(menu));
+                EventQueue.invokeLater(() -> availableCandidatesMenu.add(menu));
             }
         }
 
