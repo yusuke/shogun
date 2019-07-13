@@ -13,5 +13,6 @@ enum Messages {
     openInTerminal,
     uninstall,
     copyPath,
+    removeArchive,
     availableCandidates
 }

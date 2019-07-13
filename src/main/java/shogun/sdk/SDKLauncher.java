@@ -17,6 +17,7 @@ public class SDKLauncher {
     public static String exec(String... command) {
         try {
             File tempFile = File.createTempFile("sdk", "log");
+            command[command.length - 1] = command[command.length - 1] + " >" + tempFile.getAbsolutePath() + " 2>&1";
             logger.debug("Command to be executed: {}", (Object) command);
             ProcessBuilder pb = new ProcessBuilder(command);
             Process process = pb.start();
@@ -27,24 +28,13 @@ public class SDKLauncher {
             printWriter.flush();
             process.waitFor();
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            redirectStream(process.getInputStream(), baos);
-            redirectStream(new FileInputStream(tempFile), baos);
-            redirectStream(process.getErrorStream(), baos);
+            new FileInputStream(tempFile).transferTo(baos);
             return trimANSIEscapeCodes(baos.toString());
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private static void redirectStream(InputStream from, OutputStream to) throws IOException {
-        int c;
-        try (InputStream is = from) {
-            while ((c = is.read()) != -1) {
-                System.out.write(c);
-                to.write(c);
-            }
-        }
-    }
     /**
      * trim ANSI escape codes to decorate terminal characters
      *

@@ -6,18 +6,17 @@ import shogun.sdk.SDK;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class TaskTrayTest {
     @Test
     void showTray() throws InterruptedException {
         TaskTray taskTray = new TaskTray();
         taskTray.skipConfirmation = true;
-        taskTray.lock = new CountDownLatch(1);
         taskTray.show();
-        taskTray.lock.await();
+        taskTray.waitForActionToFinish();
         SDK sdk = new SDK();
         List<String> installedCandidates = sdk.getInstalledCandidates();
         // number of installed candidates + Other candidates + SDKMAN version + Quit
@@ -26,15 +25,14 @@ class TaskTrayTest {
         List<String> strings = sdk.listCandidates();
         int numberOfAvailableCandidates = strings.size() - installedCandidates.size();
         assertEquals(numberOfAvailableCandidates, taskTray.availableCandidatesMenu.getItemCount(), "showing all available candidates");
+        System.out.println("Initialization finished");
+        dumpLabel(taskTray.popup);
 
         int numberOfAvailableVersions = ((Menu) taskTray.popup.getItem(0)).getItemCount();
 
         // click version menu
-        taskTray.lock = new CountDownLatch(1);
         taskTray.versionMenu.getActionListeners()[0].actionPerformed(new ActionEvent(TaskTrayTest.class, 0, "dummy"));
-
-        // wait for menus to be initialized
-        taskTray.lock.await();
+        taskTray.waitForActionToFinish();
         assertEquals(installedCandidates.size() + menuCount, taskTray.popup.getItemCount(), "showing all installed candidates");
         assertEquals(numberOfAvailableCandidates, taskTray.availableCandidatesMenu.getItemCount(), "showing all available candidates");
         assertEquals(numberOfAvailableVersions, ((Menu) taskTray.popup.getItem(0)).getItemCount());
@@ -47,33 +45,66 @@ class TaskTrayTest {
         Menu availableCandidateVersionMenu = (Menu) availableCandidateMenu.getItem(0);
         String candidateVersion = availableCandidateVersionMenu.getLabel();
         try {
-            MenuItem installMenu = availableCandidateVersionMenu.getItem(0);
+            MenuItem installMenu = availableCandidateVersionMenu.getItem(availableCandidateVersionMenu.getItemCount() - 1);
             // install the version
-            taskTray.lock = new CountDownLatch(1);
             assertEquals(taskTray.getMessage(Messages.install), installMenu.getLabel());
+            System.out.printf("Installing %s:%s%n", candidateStr, candidateVersion);
+            dumpLabel(taskTray.popup);
+
             installMenu.getActionListeners()[0].actionPerformed(new ActionEvent(TaskTrayTest.class, 0, "dummy"));
-            taskTray.lock.await();
-            // wait for EventQueue to update menu items
-            Thread.sleep(1000);
+            taskTray.waitForActionToFinish();
+
+            System.out.printf("Finished %s:%s installation%n", candidateStr, candidateVersion);
+            dumpLabel(taskTray.popup);
             assertEquals(popupItemCount + 1, taskTray.popup.getItemCount());
             assertEquals(availableItemCount - 1, taskTray.availableCandidatesMenu.getItemCount());
 
             // uninstall the version
-            Menu candidateVersionToBeUninstalledMenu = (Menu) availableCandidateMenu.getItem(0);
+            Menu candidateTobeUninstalledMenu = null;
+            for (int i = 0; i < taskTray.popup.getItemCount(); i++) {
+                Menu menu = (Menu) taskTray.popup.getItem(i);
+                if (menu.getLabel().contains(candidateStr)) {
+                    candidateTobeUninstalledMenu = menu;
+                    break;
+                }
+            }
+            assertNotNull(candidateTobeUninstalledMenu);
+            Menu candidateVersionToBeUninstalledMenu = (Menu) candidateTobeUninstalledMenu.getItem(0);
             MenuItem uninstallMenu = candidateVersionToBeUninstalledMenu.getItem(candidateVersionToBeUninstalledMenu.getItemCount() - 1);
             assertEquals(taskTray.getMessage(Messages.uninstall), uninstallMenu.getLabel());
 
-            taskTray.lock = new CountDownLatch(1);
+            System.out.printf("Uninstalling %s%n", candidateVersionToBeUninstalledMenu.getLabel());
+            dumpLabel(taskTray.popup);
             uninstallMenu.getActionListeners()[0].actionPerformed(new ActionEvent(TaskTrayTest.class, 0, "dummy"));
-            taskTray.lock.await();
-            // wait for EventQueue to update menu items
-            Thread.sleep(1000);
+            taskTray.waitForActionToFinish();
 
+            // wait for EventQueue to update menu items
+            System.out.printf("Uninstalled %s%n", candidateVersionToBeUninstalledMenu.getLabel());
+            dumpLabel(taskTray.popup);
             assertEquals(popupItemCount, taskTray.popup.getItemCount());
             assertEquals(availableItemCount, taskTray.availableCandidatesMenu.getItemCount());
+
+            // uninstalled version is archived
+            Menu uninstalledVersionMenu = (Menu) ((Menu) taskTray.availableCandidatesMenu.getItem(0)).getItem(0);
+            // menu has install and remove archive menu item
+            assertEquals(2, uninstalledVersionMenu.getItemCount());
+            MenuItem removeArchiveMenuItem = uninstalledVersionMenu.getItem(0);
+            System.out.println(removeArchiveMenuItem.getLabel());
+            System.out.println("deleting archive");
+            removeArchiveMenuItem.getActionListeners()[0].actionPerformed(new ActionEvent(TaskTrayTest.class, 0, "dummy"));
+            taskTray.waitForActionToFinish();
+
+            assertEquals(1, ((Menu) ((Menu) taskTray.availableCandidatesMenu.getItem(0)).getItem(0)).getItemCount());
         } finally {
+            System.out.printf("Uninstalling %s:%s in finally block%n", candidateStr, candidateVersion);
             // ensure the version is uninstalled
             SDK.runSDK("uninstall " + candidateStr + " " + candidateVersion);
+        }
+    }
+
+    void dumpLabel(Menu menu) {
+        for (int i = 0; i < menu.getItemCount(); i++) {
+            System.out.println(i + ":" + menu.getItem(i).getLabel());
         }
     }
 }
