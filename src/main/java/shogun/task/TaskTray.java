@@ -254,10 +254,10 @@ public class TaskTray {
                 setRootMenuLabel(candidateMenu);
                 candidateMenu.removeAll();
 
-                for (Version jdk : versions) {
-                    Menu jdkMenuItem = new Menu(toLabel(jdk));
-                    updateMenu(jdkMenuItem, jdk);
-                    candidateMenu.add(jdkMenuItem);
+                for (Version version : versions) {
+                    Menu menu = new Menu(toLabel(version));
+                    updateMenu(menu, version);
+                    candidateMenu.add(menu);
                 }
             });
         }
@@ -394,44 +394,44 @@ public class TaskTray {
         }
 
         // needs to be called inside GUI thread
-        private void updateMenu(Menu menu, Version jdk) {
-            menu.setLabel(toLabel(jdk));
+        private void updateMenu(Menu menu, Version version) {
+            menu.setLabel(toLabel(version));
             menu.removeAll();
-            if (jdk.isInstalled() || jdk.isLocallyInstalled()) {
-                if (!jdk.isUse()) {
+            if (version.isInstalled() || version.isLocallyInstalled()) {
+                if (!version.isUse()) {
                     MenuItem menuItem = new MenuItem(getMessage(Messages.makeDefault));
-                    menuItem.addActionListener(e -> setDefault(jdk));
+                    menuItem.addActionListener(e -> setDefault(version));
                     menu.add(menuItem);
                 }
 
-                MenuItem openInTerminalMenu = new MenuItem(getMessage(Messages.openInTerminal, jdk.getIdentifier()));
-                openInTerminalMenu.addActionListener(e -> openInTerminal(jdk));
+                MenuItem openInTerminalMenu = new MenuItem(getMessage(Messages.openInTerminal, version.getIdentifier()));
+                openInTerminalMenu.addActionListener(e -> openInTerminal(version));
                 menu.add(openInTerminalMenu);
 
                 MenuItem copyPathMenu = new MenuItem(getMessage(Messages.copyPath));
-                copyPathMenu.addActionListener(e -> copyPathToClipboard(jdk));
+                copyPathMenu.addActionListener(e -> copyPathToClipboard(version));
                 menu.add(copyPathMenu);
 
                 MenuItem revealInFinderMenu = new MenuItem(getMessage(Messages.revealInFinder));
-                revealInFinderMenu.addActionListener(e -> revealInFinder(jdk));
+                revealInFinderMenu.addActionListener(e -> revealInFinder(version));
                 menu.add(revealInFinderMenu);
             }
 
-            if (jdk.isArchived()) {
-                MenuItem menuItem = new MenuItem(getMessage(Messages.removeArchive, jdk.getArchiveSize()));
-                menuItem.addActionListener(e -> removeArchive(jdk));
+            if (version.isArchived()) {
+                MenuItem menuItem = new MenuItem(getMessage(Messages.removeArchive, version.getArchiveSize()));
+                menuItem.addActionListener(e -> removeArchive(version));
                 menu.add(menuItem);
             }
 
-            if (jdk.isInstalled() || jdk.isLocallyInstalled()) {
+            if (version.isInstalled() || version.isLocallyInstalled()) {
                 MenuItem uninstallItem = new MenuItem(getMessage(Messages.uninstall));
-                uninstallItem.addActionListener(e -> uninstall(jdk));
+                uninstallItem.addActionListener(e -> uninstall(version));
                 menu.add(uninstallItem);
             }
 
-            if (!jdk.isInstalled() && !jdk.isLocallyInstalled()) {
+            if (!version.isInstalled() && !version.isLocallyInstalled()) {
                 MenuItem menuItem = new MenuItem(getMessage(Messages.install));
-                menuItem.addActionListener(e -> install(jdk));
+                menuItem.addActionListener(e -> install(version));
                 menu.add(menuItem);
             }
         }
@@ -444,24 +444,24 @@ public class TaskTray {
         });
     }
 
-    private void openInTerminal(Version jdk) {
+    private void openInTerminal(Version version) {
         execute(() -> SDKLauncher.exec("bash",
                 "-c", String.format("osascript -e 'tell application \"Terminal\" to do script \"sdk use %s %s\"';osascript -e 'tell application \"Terminal\" to activate'",
-                        jdk.getCandidate(), jdk.getIdentifier())));
+                        version.getCandidate(), version.getIdentifier())));
     }
 
-    private void copyPathToClipboard(Version jdk) {
+    private void copyPathToClipboard(Version version) {
         execute(() -> {
             Toolkit kit = Toolkit.getDefaultToolkit();
             Clipboard clip = kit.getSystemClipboard();
-            StringSelection ss = new StringSelection(jdk.getPath());
+            StringSelection ss = new StringSelection(version.getPath());
             clip.setContents(ss, ss);
         });
     }
 
-    private void revealInFinder(Version jdk) {
+    private void revealInFinder(Version version) {
         execute(() -> {
-            ProcessBuilder pb = new ProcessBuilder("open", jdk.getPath());
+            ProcessBuilder pb = new ProcessBuilder("open", version.getPath());
             try {
                 Process process = pb.start();
                 process.waitFor();
