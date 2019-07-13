@@ -311,7 +311,6 @@ public class TaskTray {
         void setDefault(Version version) {
             execute(() -> {
                 logger.debug("Set default: {}", version);
-                sdk.makeDefault(version.getCandidate(), version);
                 Menu menu = candidateMenu;
                 Optional<Version> lastDefault = versions.stream().filter(Version::isUse).findFirst();
                 lastDefault.ifPresent(oldDefaultVersion -> {
@@ -321,6 +320,8 @@ public class TaskTray {
                         updateMenu(oldDefaultMenu, oldDefaultVersion);
                     });
                 });
+
+                sdk.makeDefault(version.getCandidate(), version);
 
                 Version newDefaultVersion = versions.get(versions.indexOf(version));
                 newDefaultVersion.setUse(true);
