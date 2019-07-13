@@ -106,22 +106,22 @@ class SDKTest {
         Version hsadpt80212 = versions.get(1);
         assertEquals("8.0.212.hs-adpt", hsadpt80212.getVersion());
         assertFalse(hsadpt80212.use);
-        assertTrue(hsadpt80212.isInstalled());
+        assertEquals("installed", hsadpt80212.getStatus());
 
         Version hsadpt1201 = versions.get(2);
         assertEquals("12.0.1.hs-adpt", hsadpt1201.getVersion());
         assertFalse(hsadpt1201.use);
-        assertTrue(hsadpt1201.isInstalled());
+        assertEquals("installed", hsadpt1201.getStatus());
 
         Version hsadpt1103 = versions.get(3);
         assertEquals("11.0.3.hs-adpt", hsadpt1103.getVersion());
         assertTrue(hsadpt1103.use);
-        assertTrue(hsadpt1103.isInstalled());
+        assertEquals("installed", hsadpt1103.getStatus());
 
         Version librca1103 = versions.get(4);
         assertEquals("11.0.3-librca", librca1103.getVersion());
         assertFalse(librca1103.use);
-        assertTrue(librca1103.isInstalled());
+        assertEquals("installed", librca1103.getStatus());
     }
 
     @Test
@@ -141,7 +141,7 @@ class SDKTest {
         Version hsadpt80212 = versions.get(1);
         assertEquals("8.0.212.hs-adpt", hsadpt80212.getVersion());
         assertFalse(hsadpt80212.isUse());
-        assertTrue(hsadpt80212.isInstalled());
+        assertEquals("installed", hsadpt80212.getStatus());
 
         Version hsadpt1201 = versions.get(2);
         assertEquals("12.0.1.hs-adpt", hsadpt1201.getVersion());
@@ -240,14 +240,12 @@ class SDKTest {
         assertEquals("3.6.1", versions.get(0).getVersion());
         assertEquals("3.6.1", versions.get(0).getIdentifier());
         assertTrue(versions.get(0).use);
-        assertTrue(versions.get(0).isInstalled());
-        assertFalse(versions.get(0).isLocallyInstalled());
+        assertEquals("installed", versions.get(0).getStatus());
 
         assertEquals("3.6.0", versions.get(1).getVersion());
         assertEquals("3.6.0", versions.get(1).getIdentifier());
         assertFalse(versions.get(1).use);
         assertFalse(versions.get(1).isInstalled());
-        assertFalse(versions.get(1).isLocallyInstalled());
 
         assertEquals("3.5.4", versions.get(2).getVersion());
         assertEquals("3.5.4", versions.get(2).getIdentifier());
@@ -258,8 +256,7 @@ class SDKTest {
         assertEquals("2.2.1", versions.get(7).getVersion());
         assertEquals("2.2.1", versions.get(7).getIdentifier());
         assertFalse(versions.get(7).use);
-        assertFalse(versions.get(7).isInstalled());
-        assertTrue(versions.get(7).isLocallyInstalled());
+        assertEquals("local only", versions.get(7).getStatus());
     }
 
 
