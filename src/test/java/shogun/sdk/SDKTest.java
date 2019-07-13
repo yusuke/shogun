@@ -67,26 +67,30 @@ class SDKTest {
         SDK sdk = new SDK();
         List<Version> java = sdk.list("ant");
         Optional<Version> notInstalled = java.stream().filter(e -> !e.getStatus().equals("installed")).findFirst();
-        notInstalled.ifPresent(e -> {
-                    // install the sdk
-            sdk.install(e);
-            assertTrue(sdk.isArchiveExists());
-            List<Version> newSDKs = sdk.list("ant");
-                    Optional<Version> installed = newSDKs.stream().filter(e2 -> e2.getIdentifier().equals(e.getIdentifier())).findFirst();
-                    assertTrue(installed.isPresent());
-            assertTrue(installed.get().isInstalled());
-            sdk.makeDefault("ant", installed.get());
-            assertTrue(installed.get().isUse());
-                    // uninstall the sdk
-            sdk.uninstall(e);
-            List<Version> uninstalledSDK = sdk.list("ant");
-                    Optional<Version> uninstalled = uninstalledSDK.stream().filter(e2 -> e2.getIdentifier().equals(e.getIdentifier())).findFirst();
-                    assertTrue(uninstalled.isPresent());
-            assertFalse(uninstalled.get().isInstalled());
-            assertTrue(uninstalled.get().isArchived());
-            assertFalse(installed.get().isUse());
-                }
-        );
+        try {
+            notInstalled.ifPresent(e -> {
+                        // install the sdk
+                        sdk.install(e);
+                        assertTrue(sdk.isArchiveExists());
+                        List<Version> newSDKs = sdk.list("ant");
+                        Optional<Version> installed = newSDKs.stream().filter(e2 -> e2.getIdentifier().equals(e.getIdentifier())).findFirst();
+                        assertTrue(installed.isPresent());
+                        assertTrue(installed.get().isInstalled());
+                        sdk.makeDefault("ant", installed.get());
+                        assertTrue(installed.get().isUse());
+                        // uninstall the sdk
+                        sdk.uninstall(e);
+                        List<Version> uninstalledSDK = sdk.list("ant");
+                        Optional<Version> uninstalled = uninstalledSDK.stream().filter(e2 -> e2.getIdentifier().equals(e.getIdentifier())).findFirst();
+                        assertTrue(uninstalled.isPresent());
+                        assertFalse(uninstalled.get().isInstalled());
+                        assertTrue(uninstalled.get().isArchived());
+                        assertFalse(installed.get().isUse());
+                    }
+            );
+        } finally {
+            notInstalled.ifPresent(sdk::uninstall);
+        }
     }
 
     @Test
@@ -150,7 +154,7 @@ class SDKTest {
         Version hsadpt1103 = versions.get(3);
         assertEquals("11.0.3.hs-adpt", hsadpt1103.getVersion());
         assertFalse(hsadpt1103.isUse());
-        assertTrue(hsadpt1103.isInstalled());
+        assertEquals("installed", hsadpt1103.getStatus());
 
         Version librca1103 = versions.get(4);
         assertEquals("11.0.3-librca", librca1103.getVersion());
