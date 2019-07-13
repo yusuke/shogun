@@ -14,5 +14,6 @@ enum Messages {
     uninstall,
     copyPath,
     removeArchive,
-    availableCandidates
+    refresh,
+    flushArchives, availableCandidates
 }

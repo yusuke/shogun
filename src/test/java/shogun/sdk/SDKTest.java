@@ -70,6 +70,7 @@ class SDKTest {
         notInstalled.ifPresent(e -> {
                     // install the sdk
             sdk.install(e);
+            assertTrue(sdk.isArchiveExists());
             List<Version> newSDKs = sdk.list("ant");
                     Optional<Version> installed = newSDKs.stream().filter(e2 -> e2.getIdentifier().equals(e.getIdentifier())).findFirst();
                     assertTrue(installed.isPresent());

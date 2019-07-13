@@ -1,5 +1,6 @@
 package shogun.sdk;
 
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import shogun.logging.LoggerFactory;
 
@@ -42,6 +43,53 @@ public class SDK {
     public String getVersion() {
         return parseSDKVersion(runSDK("version"));
     }
+
+    @NotNull
+    private File getArchiveDir() {
+        return new File(SDK.getSDK_MAN_DIR() + File.separator + "archives");
+    }
+
+    boolean isArchiveExists() {
+        File archiveDir = getArchiveDir();
+        if (archiveDir.exists() && archiveDir.isDirectory()) {
+            //noinspection ConstantConditions
+            for (File file : archiveDir.listFiles()) {
+                if (file.isFile()) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public void flushArchives() {
+        File archiveDir = getArchiveDir();
+        if (archiveDir.exists() && archiveDir.isDirectory()) {
+            //noinspection ConstantConditions
+            for (File file : archiveDir.listFiles()) {
+                if (file.isFile()) {
+                    //noinspection ResultOfMethodCallIgnored
+                    file.delete();
+                }
+            }
+        }
+    }
+
+
+    public String getArchivesSize() {
+        File archiveDir = getArchiveDir();
+        long size = 0;
+        if (archiveDir.exists() && archiveDir.isDirectory()) {
+            //noinspection ConstantConditions
+            for (File file : archiveDir.listFiles()) {
+                if (file.isFile()) {
+                    size += file.length();
+                }
+            }
+        }
+        return Version.toSizeStr(size);
+    }
+
 
     String parseSDKVersion(String versionString) {
         wasOfflineLastTime = isOffline(versionString);

@@ -31,7 +31,9 @@ public class TaskTray {
     boolean skipConfirmation = false;
     PopupMenu popup = new PopupMenu();
     Menu availableCandidatesMenu = new Menu(getMessage(Messages.availableCandidates));
-    MenuItem versionMenu = new MenuItem();
+    Menu versionMenu = new Menu();
+    private MenuItem flushArchivesMenu = new MenuItem();
+
     private MenuItem quitMenu = new MenuItem(getMessage(Messages.quit));
 
     private final Frame thisFrameMakesDialogsAlwaysOnTop = new Frame();
@@ -49,12 +51,23 @@ public class TaskTray {
         invokeLater(() -> {
             popup.add(availableCandidatesMenu);
 
-            versionMenu.addActionListener(e -> versionMenuClicked());
+            MenuItem refreshMenu = new MenuItem(getMessage(Messages.refresh));
+            refreshMenu.addActionListener(e -> versionMenuClicked());
+            versionMenu.add(refreshMenu);
+
+            setFlushArchivesMenuLabel();
+            refreshMenu.addActionListener(e -> flushArchivesClicked());
+            versionMenu.add(flushArchivesMenu);
+
             popup.add(versionMenu);
 
             quitMenu.addActionListener(e -> quit());
             popup.add(quitMenu);
         });
+    }
+
+    private void setFlushArchivesMenuLabel() {
+        flushArchivesMenu.setLabel(getMessage(Messages.flushArchives, sdk.getArchivesSize()));
     }
 
 
@@ -83,6 +96,14 @@ public class TaskTray {
         } else {
             installSDKMAN();
         }
+    }
+
+
+    private void flushArchivesClicked() {
+        execute(() -> {
+            sdk.flushArchives();
+            invokeLater(this::setFlushArchivesMenuLabel);
+        });
     }
 
     private CountDownLatch dukeLatch = new CountDownLatch(0);
@@ -330,14 +351,6 @@ public class TaskTray {
             });
         }
 
-        void removeArchive(Version version) {
-            execute(() -> {
-                logger.debug("Delete Archive: {}", version);
-                version.removeArchive();
-                refreshMenus();
-            });
-        }
-
         void uninstall(Version version) {
             execute(() -> {
                 logger.debug("Uninstall: {}", version);
@@ -415,12 +428,6 @@ public class TaskTray {
                 MenuItem revealInFinderMenu = new MenuItem(getMessage(Messages.revealInFinder));
                 revealInFinderMenu.addActionListener(e -> revealInFinder(version));
                 menu.add(revealInFinderMenu);
-            }
-
-            if (version.isArchived()) {
-                MenuItem menuItem = new MenuItem(getMessage(Messages.removeArchive, version.getArchiveSize()));
-                menuItem.addActionListener(e -> removeArchive(version));
-                menu.add(menuItem);
             }
 
             if (version.isInstalled() || version.isLocallyInstalled()) {

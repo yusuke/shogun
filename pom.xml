@@ -113,7 +113,10 @@
                                 <argument>--verbose</argument>
                                 <argument>--echo-mode</argument>
                                 <argument>--jvm-args</argument>
-                                <argument>-Xmx10m -Xms10m</argument>
+                                <argument>-Xmx12m -Xms12m -XX:+UseSerialGC -Xverify:none
+                                    -XX:ErrorFile=$USER_HOME/java_error_in_idea_%p.log
+                                    -XX:HeapDumpPath=$USER_HOME/java_error_in_idea.hprof
+                                </argument>
                                 <argument>--copyright</argument>
                                 <argument>Yusuke Yamamoto</argument>
                                 <argument>--icon</argument>

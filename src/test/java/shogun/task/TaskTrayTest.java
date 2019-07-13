@@ -30,8 +30,8 @@ class TaskTrayTest {
 
         int numberOfAvailableVersions = ((Menu) taskTray.popup.getItem(0)).getItemCount();
 
-        // click version menu
-        taskTray.versionMenu.getActionListeners()[0].actionPerformed(new ActionEvent(TaskTrayTest.class, 0, "dummy"));
+        // click refresh menu
+        taskTray.versionMenu.getItem(0).getActionListeners()[0].actionPerformed(new ActionEvent(TaskTrayTest.class, 0, "dummy"));
         taskTray.waitForActionToFinish();
         assertEquals(installedCandidates.size() + menuCount, taskTray.popup.getItemCount(), "showing all installed candidates");
         assertEquals(numberOfAvailableCandidates, taskTray.availableCandidatesMenu.getItemCount(), "showing all available candidates");
@@ -86,15 +86,9 @@ class TaskTrayTest {
 
             // uninstalled version is archived
             Menu uninstalledVersionMenu = (Menu) ((Menu) taskTray.availableCandidatesMenu.getItem(0)).getItem(0);
-            // menu has install and remove archive menu item
-            assertEquals(2, uninstalledVersionMenu.getItemCount());
-            MenuItem removeArchiveMenuItem = uninstalledVersionMenu.getItem(0);
-            System.out.println(removeArchiveMenuItem.getLabel());
-            System.out.println("deleting archive");
-            removeArchiveMenuItem.getActionListeners()[0].actionPerformed(new ActionEvent(TaskTrayTest.class, 0, "dummy"));
-            taskTray.waitForActionToFinish();
+            // menu has install  menu item
+            assertEquals(1, uninstalledVersionMenu.getItemCount());
 
-            assertEquals(1, ((Menu) ((Menu) taskTray.availableCandidatesMenu.getItem(0)).getItem(0)).getItemCount());
         } finally {
             System.out.printf("Uninstalling %s:%s in finally block%n", candidateStr, candidateVersion);
             // ensure the version is uninstalled
