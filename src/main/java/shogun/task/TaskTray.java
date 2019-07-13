@@ -56,7 +56,7 @@ public class TaskTray {
             versionMenu.add(refreshMenu);
 
             setFlushArchivesMenuLabel();
-            refreshMenu.addActionListener(e -> flushArchivesClicked());
+            flushArchivesMenu.addActionListener(e -> flushArchivesClicked());
             versionMenu.add(flushArchivesMenu);
 
             popup.add(versionMenu);
@@ -280,6 +280,7 @@ public class TaskTray {
                     updateMenu(menu, version);
                     candidateMenu.add(menu);
                 }
+                setFlushArchivesMenuLabel();
             });
         }
 
