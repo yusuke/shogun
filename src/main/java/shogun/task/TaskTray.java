@@ -264,9 +264,7 @@ public class TaskTray {
 
         void setVersions() {
             this.versions = new ArrayList<>();
-            List<Version> versions = sdk.list(candidate);
-            versions.stream().filter(e -> e.isInstalled() || e.isLocallyInstalled()).forEach(e -> this.versions.add(e));
-            versions.stream().filter(e -> !e.isInstalled() && !e.isLocallyInstalled()).forEach(e -> this.versions.add(e));
+            this.versions = sdk.list(candidate);
             refreshMenus();
         }
 
@@ -274,6 +272,10 @@ public class TaskTray {
             invokeLater(() -> {
                 setRootMenuLabel(candidateMenu);
                 candidateMenu.removeAll();
+                List<Version> sortedVersions = new ArrayList<>();
+                versions.stream().filter(e -> e.isInstalled() || e.isLocallyInstalled()).forEach(sortedVersions::add);
+                versions.stream().filter(e -> !e.isInstalled() && !e.isLocallyInstalled()).forEach(sortedVersions::add);
+                this.versions = sortedVersions;
 
                 for (Version version : versions) {
                     Menu menu = new Menu(toLabel(version));

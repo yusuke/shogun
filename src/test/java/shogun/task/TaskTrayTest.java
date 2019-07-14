@@ -9,8 +9,7 @@ import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 class TaskTrayTest {
     private TaskTray taskTray;
@@ -77,7 +76,7 @@ class TaskTrayTest {
                 taskTray.waitForActionToFinish();
             }
 
-            Element secondVersion = installedCandidate.getItem(2);
+            Element secondVersion = installedCandidate.getLast();
             assertNotNull(installedCandidate);
 
             String thirdVersionLabel = secondVersion.getLabel().trim();
@@ -92,6 +91,21 @@ class TaskTrayTest {
             List<String> labels = rootMenu.findMenuContains(candidateStr).labels();
             // only 1 version is marked as default
             assertEquals(1, labels.stream().filter(e -> e.contains(">")).count());
+
+            // test all installed versions are listed on top
+            boolean installed = true;
+            for (String label : labels) {
+                System.out.println(label);
+                if (installed && label.contains("installed")) {
+                    continue;
+                }
+                if (installed && !label.contains("installed")) {
+                    installed = false;
+                }
+                if (!installed && label.contains("installed")) {
+                    fail("version that is marked as installed it not listed on top");
+                }
+            }
 
             Element candidateVersionToBeUninstalledMenu = installedCandidate.getItem(0);
             Element uninstallMenu = candidateVersionToBeUninstalledMenu.getLast();
