@@ -6,6 +6,7 @@ import shogun.sdk.SDK;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -50,7 +51,9 @@ class TaskTrayTest {
         Element firstAvailable = availableCandidates.getItem(0);
         String candidateStr = firstAvailable.getLabel();
         Element firstAvailableVersionMenu = firstAvailable.getItem(0);
-        String candidateVersion = firstAvailableVersionMenu.getLabel();
+        String candidateVersion = firstAvailableVersionMenu.getLabel().trim();
+        List<String> toBeUninstalled = new ArrayList<>();
+        toBeUninstalled.add(candidateVersion);
         try {
             Element installMenu = firstAvailableVersionMenu.getLast();
             // install the version
@@ -66,11 +69,31 @@ class TaskTrayTest {
             assertEquals(popupItemCount + 1, rootMenu.getItemCount());
             assertEquals(availableItemCount - 1, availableCandidates.getItemCount());
 
-            // uninstall the version
-            Element candidateTobeUninstalledMenu = rootMenu.findMenuContains(candidateStr);
+            Element installedCandidate = rootMenu.findMenuContains(candidateStr);
+            // ensure that the installed version is marked as default
+            Element makeDefaultMenu = rootMenu.findMenuContains(candidateStr).findMenuContains(candidateVersion).findMenu(Messages.makeDefault);
+            if (makeDefaultMenu != null) {
+                makeDefaultMenu.click();
+                taskTray.waitForActionToFinish();
+            }
 
-            assertNotNull(candidateTobeUninstalledMenu);
-            Element candidateVersionToBeUninstalledMenu = candidateTobeUninstalledMenu.getItem(0);
+            Element secondVersion = installedCandidate.getItem(2);
+            assertNotNull(installedCandidate);
+
+            String thirdVersionLabel = secondVersion.getLabel().trim();
+            toBeUninstalled.add(thirdVersionLabel);
+            Element thirdVersionInstallMenu = secondVersion.findMenu(Messages.install);
+            thirdVersionInstallMenu.click();
+            taskTray.waitForActionToFinish();
+            // make the third version default
+            rootMenu.findMenuContains(candidateStr).findMenuContains(thirdVersionLabel).findMenu(Messages.makeDefault).click();
+            taskTray.waitForActionToFinish();
+
+            List<String> labels = rootMenu.findMenuContains(candidateStr).labels();
+            // only 1 version is marked as default
+            assertEquals(1, labels.stream().filter(e -> e.contains(">")).count());
+
+            Element candidateVersionToBeUninstalledMenu = installedCandidate.getItem(0);
             Element uninstallMenu = candidateVersionToBeUninstalledMenu.getLast();
             assertEquals(taskTray.getMessage(Messages.uninstall), uninstallMenu.getLabel());
 
@@ -82,6 +105,11 @@ class TaskTrayTest {
             // wait for EventQueue to update menu items
             System.out.printf("Uninstalled %s%n", candidateVersionToBeUninstalledMenu.getLabel());
             rootMenu.dumpLabels();
+            assertEquals(popupItemCount + 1, rootMenu.getItemCount());
+            assertEquals(availableItemCount - 1, availableCandidates.getItemCount());
+
+            rootMenu.findMenuContains(candidateStr).findMenuContains(thirdVersionLabel).findMenu(Messages.uninstall).click();
+            taskTray.waitForActionToFinish();
             assertEquals(popupItemCount, rootMenu.getItemCount());
             assertEquals(availableItemCount, availableCandidates.getItemCount());
 
@@ -91,9 +119,12 @@ class TaskTrayTest {
             assertNotNull(uninstalledVersionMenu.findMenu(Messages.install));
 
         } finally {
-            System.out.printf("Uninstalling %s:%s in finally block%n", candidateStr, candidateVersion);
-            // ensure the version is uninstalled
-            SDK.runSDK("uninstall " + candidateStr + " " + candidateVersion);
+            for (String versionStr : toBeUninstalled) {
+                System.out.printf("Uninstalling %s:%s in finally block%n", candidateStr, versionStr);
+                // ensure the version is uninstalled
+                SDK.runSDK("uninstall " + candidateStr + " " + versionStr);
+
+            }
         }
     }
 
@@ -114,17 +145,6 @@ class TaskTrayTest {
             }
         }
 
-        Element findMenu(Messages message) {
-            String menuStr = taskTray.getMessage(message).replaceAll("\\{[0-9]+}", "");
-            for (int i = 0; i < getItemCount(); i++) {
-                Element item = getItem(i);
-                if (item.getLabel().contains(menuStr)) {
-                    return item;
-                }
-            }
-            return null;
-        }
-
         Element(MenuItem item) {
             this.menu = item;
         }
@@ -134,7 +154,13 @@ class TaskTrayTest {
         }
 
         Element getItem(int i) {
-            return new Element(getMenu().getItem(i));
+            try {
+                return new Element(getMenu().getItem(i));
+            } catch (ArrayIndexOutOfBoundsException e) {
+                System.out.println("index:" + i + " not found.");
+                labels().forEach(System.out::println);
+                throw e;
+            }
         }
 
         Element getLast() {
@@ -147,12 +173,18 @@ class TaskTrayTest {
 
         Element findMenuContains(String label) {
             for (int i = 0; i < getMenu().getItemCount(); i++) {
-                MenuItem menu = getMenu().getItem(i);
-                if (menu.getLabel().contains(label)) {
-                    return new Element(menu);
+                MenuItem menuItem = getMenu().getItem(i);
+                if (menuItem.getLabel().contains(label)) {
+                    return new Element(menuItem);
                 }
             }
+            System.out.println("label:" + label + " not found.");
+            labels().forEach(System.out::println);
             return null;
+        }
+
+        Element findMenu(Messages message) {
+            return findMenuContains(taskTray.getMessage(message).replaceAll("\\{[0-9]+}", ""));
         }
 
         String getLabel() {
@@ -163,6 +195,14 @@ class TaskTrayTest {
             for (ActionListener actionListener : menu.getActionListeners()) {
                 actionListener.actionPerformed(new ActionEvent(TaskTrayTest.class, 0, "dummy"));
             }
+        }
+
+        List<String> labels() {
+            List<String> labels = new ArrayList<>();
+            for (int i = 0; i < getMenu().getItemCount(); i++) {
+                labels.add(getMenu().getItem(i).getLabel());
+            }
+            return labels;
         }
     }
 }

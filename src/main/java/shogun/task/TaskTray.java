@@ -313,20 +313,19 @@ public class TaskTray {
                 logger.debug("Set default: {}", version);
                 Menu menu = candidateMenu;
                 Optional<Version> lastDefault = versions.stream().filter(Version::isUse).findFirst();
-                lastDefault.ifPresent(oldDefaultVersion -> {
-                    oldDefaultVersion.setUse(false);
-                    invokeLater(() -> {
-                        Menu oldDefaultMenu = find(menu, oldDefaultVersion);
-                        updateMenu(oldDefaultMenu, oldDefaultVersion);
-                    });
-                });
-
                 sdk.makeDefault(version.getCandidate(), version);
 
                 Version newDefaultVersion = versions.get(versions.indexOf(version));
                 newDefaultVersion.setUse(true);
                 Menu newDefaultMenu = find(menu, newDefaultVersion);
-                invokeLater(() -> updateMenu(newDefaultMenu, newDefaultVersion));
+                invokeLater(() -> {
+                    lastDefault.ifPresent(oldDefaultVersion -> {
+                        oldDefaultVersion.setUse(false);
+                        Menu oldDefaultMenu = find(menu, oldDefaultVersion);
+                        updateMenu(oldDefaultMenu, oldDefaultVersion);
+                    });
+                    updateMenu(newDefaultMenu, newDefaultVersion);
+                });
                 setRootMenuLabel(menu);
             });
         }
