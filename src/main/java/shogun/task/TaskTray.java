@@ -22,23 +22,23 @@ import static javax.swing.JOptionPane.QUESTION_MESSAGE;
 
 public class TaskTray {
     private final static Logger logger = LoggerFactory.getLogger();
-    private ResourceBundle bundle = ResourceBundle.getBundle("message", Locale.getDefault());
+    private final ResourceBundle bundle = ResourceBundle.getBundle("message", Locale.getDefault());
 
-    private SDK sdk = new SDK();
+    private final SDK sdk = new SDK();
     private SystemTray tray;
     private TrayIcon icon;
     // for the test purpose, set true to skip confirmation dialogs
     boolean skipConfirmation = false;
-    PopupMenu popup = new PopupMenu();
-    Menu availableCandidatesMenu = new Menu(getMessage(Messages.availableCandidates));
-    Menu versionMenu = new Menu();
-    private MenuItem flushArchivesMenu = new MenuItem();
+    final PopupMenu popup = new PopupMenu();
+    final Menu availableCandidatesMenu = new Menu(getMessage(Messages.availableCandidates));
+    final Menu versionMenu = new Menu();
+    private final MenuItem flushArchivesMenu = new MenuItem();
 
-    private MenuItem quitMenu = new MenuItem(getMessage(Messages.quit));
+    private final MenuItem quitMenu = new MenuItem(getMessage(Messages.quit));
 
     private final Frame thisFrameMakesDialogsAlwaysOnTop = new Frame();
-    private List<Image> animatedDuke;
-    private DukeThread duke;
+    private final List<Image> animatedDuke;
+    private final DukeThread duke;
 
     public TaskTray() {
         animatedDuke = new ArrayList<>();
@@ -113,7 +113,7 @@ public class TaskTray {
     }
 
     class DukeThread extends Thread {
-        AtomicInteger integer = new AtomicInteger();
+        final AtomicInteger integer = new AtomicInteger();
 
 
         DukeThread() {
@@ -165,7 +165,7 @@ public class TaskTray {
         }
     }
 
-    private ImageIcon dialogIcon = new ImageIcon(Toolkit.getDefaultToolkit().createImage(ClassLoader.getSystemResource("images/duke-128x128.png")));
+    private final ImageIcon dialogIcon = new ImageIcon(Toolkit.getDefaultToolkit().createImage(ClassLoader.getSystemResource("images/duke-128x128.png")));
 
     private final ExecutorService executorService = Executors.newFixedThreadPool(1,
             new ThreadFactory() {
@@ -204,7 +204,7 @@ public class TaskTray {
         System.exit(0);
     }
 
-    private Map<String, Candidate> candidateMap = new HashMap<>();
+    private final Map<String, Candidate> candidateMap = new HashMap<>();
 
     private synchronized void initializeMenuItems() {
         logger.debug("Initializing menu items.");
@@ -249,7 +249,7 @@ public class TaskTray {
     class Candidate {
         private final String candidate;
         private List<Version> versions;
-        Menu candidateMenu;
+        final Menu candidateMenu;
 
         Candidate(String candidate, boolean installed) {
             this.candidate = candidate;

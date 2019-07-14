@@ -1,10 +1,11 @@
 package shogun.sdk;
 
 public class JavaVersion extends Version {
-    private String dist;
-    private String identifier;
-    private String vendor;
+    private final String dist;
+    private final String identifier;
+    private final String vendor;
 
+    @SuppressWarnings("SameParameterValue")
     JavaVersion(String candidate, String vendor, boolean use, String version, String dist, String status, String identifier) {
         super(candidate, use, version, status);
         this.vendor = vendor;

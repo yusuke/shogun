@@ -11,12 +11,12 @@ import java.text.DecimalFormat;
 import java.util.Objects;
 
 public class Version {
-    private String candidate;
+    private final String candidate;
     /**
      * true if the version is marked as default. This property won't be used because isUse() checks actual symbolic link
      */
     boolean use;
-    private String version;
+    private final String version;
     private String status;
 
     Version(String candidate, boolean use, String version, String status) {
