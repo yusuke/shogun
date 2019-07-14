@@ -1,14 +1,7 @@
 # Project exclude paths
 /target/
-.idea/dataSources
-.idea/artifacts
 .idea/workspace.xml
 .idea/libraries/
-*/target/
-*.log
-**/build/
-rebel.xml
 uiDesigner.xml
 misc.xml
-jdk.packager-osx/
 jdk.packager/

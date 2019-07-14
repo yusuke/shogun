@@ -17,7 +17,7 @@ public class Version {
      */
     boolean use;
     private final String version;
-    private String status;
+    private final String status;
 
     Version(String candidate, boolean use, String version, String status) {
         this.candidate = candidate;
@@ -47,10 +47,6 @@ public class Version {
         return status;
     }
 
-    public void setStatus(String newStatus) {
-        this.status = newStatus;
-    }
-
     public boolean isInstalled() {
         return getInstallationDir().toFile().exists() && !Files.isSymbolicLink(getInstallationDir());
     }
@@ -63,6 +59,7 @@ public class Version {
         return getArchiveFile().exists();
     }
 
+    @SuppressWarnings("unused")
     public String getArchiveSize() {
         return toSizeStr(getArchiveFile().length());
     }
@@ -97,6 +94,7 @@ public class Version {
         return Paths.get(SDK.getSDK_MAN_DIR() + File.separator + "candidates" + File.separator + candidate + File.separator + "current");
     }
 
+    @SuppressWarnings("unused")
     public void removeArchive() {
         if (!isArchived()) {
             throw new IllegalStateException("Version not archived:" + this.toString());
