@@ -124,9 +124,9 @@ public class TaskTray {
         private synchronized void startRoll() {
             if (integer.getAndIncrement() == 0) {
                 dukeLatch = new CountDownLatch(1);
-            }
-            synchronized (this) {
-                this.notify();
+                synchronized (this) {
+                    this.notify();
+                }
             }
         }
 
@@ -144,7 +144,7 @@ public class TaskTray {
             while (true) {
                 while (0 < integer.get()) {
                     for (Image animation : animatedDuke) {
-                        invokeLater(() -> icon.setImage(animation));
+                        EventQueue.invokeLater(() -> icon.setImage(animation));
                         try {
                             Thread.sleep(100);
                         } catch (InterruptedException ignore) {
@@ -154,7 +154,11 @@ public class TaskTray {
                         }
                     }
                 }
-                invokeLater(() -> icon.setImage(animatedDuke.get(0)));
+                EventQueue.invokeLater(() -> {
+                    if (integer.get() == 0) {
+                        icon.setImage(animatedDuke.get(0));
+                    }
+                });
                 try {
                     synchronized (this) {
                         wait();
