@@ -12,6 +12,9 @@ import java.util.Objects;
 
 public class Version {
     private String candidate;
+    /**
+     * true if the version is marked as default. This property won't be used because isUse() checks actual symbolic link
+     */
     boolean use;
     private String version;
     private String status;
@@ -40,7 +43,7 @@ public class Version {
     }
 
 
-    public String getStatus() {
+    String getStatus() {
         return status;
     }
 
@@ -56,7 +59,7 @@ public class Version {
         return getInstallationDir().toFile().exists() && Files.isSymbolicLink(getInstallationDir());
     }
 
-    public boolean isArchived() {
+    boolean isArchived() {
         return getArchiveFile().exists();
     }
 

@@ -144,7 +144,7 @@ class SDKTest {
 
         Version hsadpt80212 = versions.get(1);
         assertEquals("8.0.212.hs-adpt", hsadpt80212.getVersion());
-        assertFalse(hsadpt80212.isUse());
+        assertFalse(hsadpt80212.use);
         assertEquals("installed", hsadpt80212.getStatus());
 
         Version hsadpt1201 = versions.get(2);
@@ -153,7 +153,7 @@ class SDKTest {
 
         Version hsadpt1103 = versions.get(3);
         assertEquals("11.0.3.hs-adpt", hsadpt1103.getVersion());
-        assertFalse(hsadpt1103.isUse());
+        assertFalse(hsadpt1103.use);
         assertEquals("installed", hsadpt1103.getStatus());
 
         Version librca1103 = versions.get(4);
