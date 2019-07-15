@@ -14,6 +14,8 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <java.version>11</java.version>
+        <jpackager.executable>${project.basedir}/jdk.packager/jpackager</jpackager.executable>
+        <jpackager.icon>${project.basedir}/package/Shogun.icns</jpackager.icon>
     </properties>
 
     <dependencies>
@@ -102,7 +104,7 @@
                             <goal>exec</goal>
                         </goals>
                         <configuration>
-                            <executable>${project.basedir}/jdk.packager/jpackager</executable>
+                            <executable>${jpackager.executable}</executable>
                             <workingDirectory>${project.build.directory}</workingDirectory>
                             <longModulepath>false</longModulepath>
                             <environmentVariables>
@@ -119,8 +121,10 @@
                                 </argument>
                                 <argument>--copyright</argument>
                                 <argument>Yusuke Yamamoto</argument>
+                                <argument>--vendor</argument>
+                                <argument>Yusuke Yamamoto</argument>
                                 <argument>--icon</argument>
-                                <argument>${project.basedir}/package/Shogun.icns</argument>
+                                <argument>${jpackager.icon}</argument>
                                 <argument>--input</argument>
                                 <argument>${project.build.directory}/</argument>
                                 <argument>--class</argument>
@@ -176,6 +180,17 @@
             </plugin>
         </plugins>
     </build>
-
+    <profiles>
+        <profile>
+            <id>windows</id>
+            <activation>
+                <os><family>windows</family></os>
+            </activation>
+            <properties>
+                <jpackager.executable>${java.home}/bin/jpackager</jpackager.executable>
+                <jpackager.icon>${project.basedir}/package/windows/Shogun.ico</jpackager.icon>
+            </properties>
+        </profile>
+    </profiles>
 
 </project>
