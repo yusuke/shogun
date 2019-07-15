@@ -15,6 +15,7 @@ public class JDKScanner {
         Platform.isMac(() -> {
             result.addAll(searchJDKs(new File("/Library/Java/JavaVirtualMachines")));
             result.addAll(searchJDKs(new File(System.getProperty("user.home"))));
+            result.addAll(searchJDKs(new File(System.getProperty("user.home") + File.separator + "Library/Java/JavaVirtualMachines")));
             result.addAll(searchJDKs(new File(System.getProperty("user.home") + File.separator + "Downloads")));
         });
         List<NotRegisteredVersion> versionList = new ArrayList<>();
