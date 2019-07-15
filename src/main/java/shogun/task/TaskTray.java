@@ -405,7 +405,9 @@ public class TaskTray {
 
         void addToInstalledCandidatesMenu(Menu menu) {
             boolean added = false;
-            for (int i = 0; i < popup.getItemCount() - 3; i++) {
+            // number of installed candidates + Other candidates + SDKMAN version + Shogun version + Quit
+            int menuCount = 4;
+            for (int i = 0; i < popup.getItemCount() - menuCount; i++) {
                 MenuItem item = popup.getItem(i);
                 if (0 < item.getLabel().compareTo(candidate)) {
                     int index = i;
@@ -416,7 +418,7 @@ public class TaskTray {
             }
             if (!added) {
                 // last item in installed candidates items
-                invokeLater(() -> popup.insert(menu, popup.getItemCount() - 3));
+                invokeLater(() -> popup.insert(menu, popup.getItemCount() - menuCount));
             }
         }
 
