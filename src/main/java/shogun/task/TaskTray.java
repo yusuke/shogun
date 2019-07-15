@@ -455,8 +455,7 @@ public class TaskTray {
     }
 
     private void openInTerminal(Version version) {
-        execute(() -> SDKLauncher.exec("bash",
-                "-c", String.format("osascript -e 'tell application \"Terminal\" to do script \"sdk use %s %s\"';osascript -e 'tell application \"Terminal\" to activate'",
+        execute(() -> SDKLauncher.exec(String.format("osascript -e 'tell application \"Terminal\" to do script \"sdk use %s %s\"';osascript -e 'tell application \"Terminal\" to activate'",
                         version.getCandidate(), version.getIdentifier())));
     }
 

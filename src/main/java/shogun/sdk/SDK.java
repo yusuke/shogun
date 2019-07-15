@@ -37,7 +37,7 @@ public class SDK {
         if (isInstalled()) {
             throw new IllegalStateException("SDKMAN! already installed.");
         }
-        return SDKLauncher.exec("bash", "-c", "curl -s \"https://get.sdkman.io\" | bash").trim();
+        return SDKLauncher.exec("curl -s \"https://get.sdkman.io\" | bash").trim();
     }
 
     public String getVersion() {
@@ -253,14 +253,18 @@ public class SDK {
     }
 
     public static String runSDK(String command) {
-        return SDKLauncher.exec("bash", "-c", String.format("source %s/bin/sdkman-init.sh;sdk %s", getSDK_MAN_DIR(), command)).trim();
+        return SDKLauncher.exec(String.format("source %s/bin/sdkman-init.sh;sdk %s", getSDK_MAN_DIR(), command)).trim();
     }
 
     private static String sdkManDir = null;
 
     static String getSDK_MAN_DIR() {
         if (sdkManDir == null) {
-            sdkManDir = SDKLauncher.exec("bash", "-c", "source ~/.bash_profile;echo $SDKMAN_DIR").trim();
+            sdkManDir = SDKLauncher.exec("source ~/.bash_profile>/dev/null;echo $SDKMAN_DIR").trim();
+            var matcher = Pattern.compile("^/([a-zA-Z])(/.*)$").matcher(sdkManDir);
+            if (matcher.matches()) {
+                sdkManDir = matcher.replaceFirst("$1:$2");
+            }
             logger.debug("SDKMAN_DIR: {}", sdkManDir);
         }
         return sdkManDir;
