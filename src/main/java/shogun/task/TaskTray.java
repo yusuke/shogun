@@ -3,9 +3,7 @@ package shogun.task;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import shogun.logging.LoggerFactory;
-import shogun.sdk.SDK;
-import shogun.sdk.SDKLauncher;
-import shogun.sdk.Version;
+import shogun.sdk.*;
 
 import javax.swing.*;
 import java.awt.*;
@@ -32,6 +30,7 @@ public class TaskTray {
     final PopupMenu popup = new PopupMenu();
     final Menu availableCandidatesMenu = new Menu(getMessage(Messages.availableCandidates));
     final Menu versionMenu = new Menu();
+    private final MenuItem shogunVersionMenu = new MenuItem("Shogun " + SDK.SHOGUN_VERSION);
     private final MenuItem flushArchivesMenu = new MenuItem();
 
     private final MenuItem quitMenu = new MenuItem(getMessage(Messages.quit));
@@ -61,6 +60,8 @@ public class TaskTray {
 
             popup.add(versionMenu);
 
+            shogunVersionMenu.setEnabled(false);
+            popup.add(shogunVersionMenu);
             quitMenu.addActionListener(e -> quit());
             popup.add(quitMenu);
         });
@@ -124,9 +125,9 @@ public class TaskTray {
         private synchronized void startRoll() {
             if (integer.getAndIncrement() == 0) {
                 dukeLatch = new CountDownLatch(1);
-            }
-            synchronized (this) {
-                this.notify();
+                synchronized (this) {
+                    this.notify();
+                }
             }
         }
 
@@ -144,7 +145,7 @@ public class TaskTray {
             while (true) {
                 while (0 < integer.get()) {
                     for (Image animation : animatedDuke) {
-                        invokeLater(() -> icon.setImage(animation));
+                        EventQueue.invokeLater(() -> icon.setImage(animation));
                         try {
                             Thread.sleep(100);
                         } catch (InterruptedException ignore) {
@@ -154,7 +155,7 @@ public class TaskTray {
                         }
                     }
                 }
-                invokeLater(() -> icon.setImage(animatedDuke.get(0)));
+                EventQueue.invokeLater(() -> icon.setImage(animatedDuke.get(0)));
                 try {
                     synchronized (this) {
                         wait();
@@ -230,7 +231,7 @@ public class TaskTray {
                         candidateMap.computeIfAbsent(e, e2 -> new Candidate(e, false));
                     });
         }
-        installedCandidates.forEach(e -> candidateMap.get(e).setVersions());
+        installedCandidates.forEach(e -> candidateMap.get(e).refreshMenus());
     }
 
     private void setVersionMenuLabel() {
@@ -262,28 +263,32 @@ public class TaskTray {
             }
         }
 
-        void setVersions() {
-            this.versions = new ArrayList<>();
-            this.versions = sdk.list(candidate);
-            refreshMenus();
-        }
-
         void refreshMenus() {
+            logger.debug("Refreshing menus for: {}", candidate);
+            this.versions = sdk.list(candidate);
+            List<Version> sortedVersions = new ArrayList<>();
+            versions.stream().filter(e -> e.isInstalled() || e.isLocallyInstalled()).forEach(sortedVersions::add);
+            if ("java".equals(candidate)) {
+                Platform.isMac(() -> {
+                    logger.debug("Scanning JDK(s) not managed by SDKMAN!");
+                    List<NotRegisteredVersion> jdkList = JDKScanner.scan();
+                    logger.debug("Found {} JDK(s)", jdkList.size());
+                    sortedVersions.addAll(jdkList);
+                });
+            }
+            versions.stream().filter(e -> !e.isInstalled() && !e.isLocallyInstalled()).forEach(sortedVersions::add);
+            this.versions = sortedVersions;
             invokeLater(() -> {
-                setRootMenuLabel(candidateMenu);
                 candidateMenu.removeAll();
-                List<Version> sortedVersions = new ArrayList<>();
-                versions.stream().filter(e -> e.isInstalled() || e.isLocallyInstalled()).forEach(sortedVersions::add);
-                versions.stream().filter(e -> !e.isInstalled() && !e.isLocallyInstalled()).forEach(sortedVersions::add);
-                this.versions = sortedVersions;
+                setRootMenuLabel(candidateMenu);
 
                 for (Version version : versions) {
                     Menu menu = new Menu(toLabel(version));
                     updateMenu(menu, version);
                     candidateMenu.add(menu);
                 }
-                setFlushArchivesMenuLabel();
             });
+            setFlushArchivesMenuLabel();
         }
 
         private boolean isInstalled() {
@@ -292,12 +297,11 @@ public class TaskTray {
 
         void setRootMenuLabel(Menu menu) {
             // add version string in use
-            invokeLater(() ->
-                    versions.stream()
-                            .filter(Version::isUse)
-                            .findFirst()
-                            .ifPresentOrElse(e -> menu.setLabel(candidate + " > " + e.toString()),
-                                    () -> menu.setLabel(candidate)));
+            String label = versions.stream()
+                    .filter(Version::isUse).map(e -> candidate + " > " + e.toString())
+                    .findFirst().orElse(candidate);
+            logger.debug("setting root label to {}", label);
+            invokeLater(() -> menu.setLabel(label));
         }
 
         Menu find(Menu menu, Version version) {
@@ -333,14 +337,18 @@ public class TaskTray {
         }
 
         void install(Version version) {
-            execute(() -> {
-                logger.debug("Install: {}", version);
-                int response = skipConfirmation ? JOptionPane.OK_OPTION :
-                        JOptionPane.showConfirmDialog(thisFrameMakesDialogsAlwaysOnTop,
-                                getMessage(Messages.confirmInstallMessage, version.getCandidate(), version.toString()),
-                                getMessage(Messages.confirmInstallTitle, version.getCandidate(), version.toString()), JOptionPane.OK_CANCEL_OPTION,
-                                QUESTION_MESSAGE, dialogIcon);
-                if (response == JOptionPane.OK_OPTION) {
+            boolean isNotRegisteredJDK = version instanceof NotRegisteredVersion;
+            String dialogTitle = isNotRegisteredJDK ? getMessage(Messages.confirmRegisterTitle, version.getCandidate(), version.getIdentifier()) :
+                    getMessage(Messages.confirmInstallTitle, version.getCandidate(), version.toString());
+            String dialogMessage = isNotRegisteredJDK ? getMessage(Messages.confirmRegisterMessage, version.getCandidate(), version.getIdentifier(), version.getPath()) :
+                    getMessage(Messages.confirmInstallMessage, version.getCandidate(), version.toString());
+            int response = skipConfirmation ? JOptionPane.OK_OPTION :
+                    JOptionPane.showConfirmDialog(thisFrameMakesDialogsAlwaysOnTop,
+                            dialogMessage, dialogTitle, JOptionPane.OK_CANCEL_OPTION,
+                            QUESTION_MESSAGE, dialogIcon);
+            if (response == JOptionPane.OK_OPTION) {
+                execute(() -> {
+                    logger.debug("Install: {}", version);
                     var wasInstalled = isInstalled();
                     sdk.install(version);
                     refreshMenus();
@@ -350,19 +358,19 @@ public class TaskTray {
                         invokeLater(() -> availableCandidatesMenu.remove(candidateRootMenu));
                         addToInstalledCandidatesMenu(candidateRootMenu);
                     }
-                }
-            });
+                });
+            }
         }
 
         void uninstall(Version version) {
-            execute(() -> {
-                logger.debug("Uninstall: {}", version);
-                int response = skipConfirmation ? JOptionPane.OK_OPTION :
-                        JOptionPane.showConfirmDialog(thisFrameMakesDialogsAlwaysOnTop,
-                                getMessage(Messages.confirmUninstallMessage, version.getCandidate(), version.toString()),
-                                getMessage(Messages.confirmUninstallTitle, version.getCandidate(), version.toString()), JOptionPane.OK_CANCEL_OPTION,
-                                QUESTION_MESSAGE, dialogIcon);
-                if (response == JOptionPane.OK_OPTION) {
+            int response = skipConfirmation ? JOptionPane.OK_OPTION :
+                    JOptionPane.showConfirmDialog(thisFrameMakesDialogsAlwaysOnTop,
+                            getMessage(Messages.confirmUninstallMessage, version.getCandidate(), version.toString()),
+                            getMessage(Messages.confirmUninstallTitle, version.getCandidate(), version.toString()), JOptionPane.OK_CANCEL_OPTION,
+                            QUESTION_MESSAGE, dialogIcon);
+            if (response == JOptionPane.OK_OPTION) {
+                execute(() -> {
+                    logger.debug("Uninstall: {}", version);
                     var wasInstalled = isInstalled();
                     sdk.uninstall(version);
                     refreshMenus();
@@ -372,13 +380,15 @@ public class TaskTray {
                         invokeLater(() -> popup.remove(candidateRootMenu));
                         addToAvailableCandidatesMenu(candidateRootMenu);
                     }
-                }
-            });
+                });
+            }
         }
 
         void addToInstalledCandidatesMenu(Menu menu) {
             boolean added = false;
-            for (int i = 0; i < popup.getItemCount() - 3; i++) {
+            // number of installed candidates + Other candidates + SDKMAN version + Shogun version + Quit
+            int menuCount = 4;
+            for (int i = 0; i < popup.getItemCount() - menuCount; i++) {
                 MenuItem item = popup.getItem(i);
                 if (0 < item.getLabel().compareTo(candidate)) {
                     int index = i;
@@ -389,7 +399,7 @@ public class TaskTray {
             }
             if (!added) {
                 // last item in installed candidates items
-                invokeLater(() -> popup.insert(menu, popup.getItemCount() - 3));
+                invokeLater(() -> popup.insert(menu, popup.getItemCount() - menuCount));
             }
         }
 
@@ -413,17 +423,20 @@ public class TaskTray {
         private void updateMenu(Menu menu, Version version) {
             menu.setLabel(toLabel(version));
             menu.removeAll();
-            if (version.isInstalled() || version.isLocallyInstalled()) {
-                if (!version.isUse()) {
-                    MenuItem menuItem = new MenuItem(getMessage(Messages.makeDefault));
-                    menuItem.addActionListener(e -> setDefault(version));
-                    menu.add(menuItem);
-                }
+            boolean isDetectedJDK = version instanceof NotRegisteredVersion;
 
+
+            if ((version.isInstalled() || version.isLocallyInstalled()) && !version.isUse()) {
+                MenuItem menuItem = new MenuItem(getMessage(Messages.makeDefault));
+                menuItem.addActionListener(e -> setDefault(version));
+                menu.add(menuItem);
+            }
+            if (version.isInstalled() || version.isLocallyInstalled()) {
                 MenuItem openInTerminalMenu = new MenuItem(getMessage(Messages.openInTerminal, version.getIdentifier()));
                 openInTerminalMenu.addActionListener(e -> openInTerminal(version));
                 menu.add(openInTerminalMenu);
-
+            }
+            if (isDetectedJDK || version.isInstalled() || version.isLocallyInstalled()) {
                 MenuItem copyPathMenu = new MenuItem(getMessage(Messages.copyPath));
                 copyPathMenu.addActionListener(e -> copyPathToClipboard(version));
                 menu.add(copyPathMenu);
@@ -445,6 +458,7 @@ public class TaskTray {
                 menu.add(menuItem);
             }
         }
+
     }
 
     private void installSDKMAN() {
@@ -455,29 +469,33 @@ public class TaskTray {
     }
 
     private void openInTerminal(Version version) {
-        execute(() -> SDKLauncher.exec(String.format("osascript -e 'tell application \"Terminal\" to do script \"sdk use %s %s\"';osascript -e 'tell application \"Terminal\" to activate'",
-                        version.getCandidate(), version.getIdentifier())));
+        SDKLauncher.exec(String.format("osascript -e 'tell application \"Terminal\" to do script \"sdk use %s %s\"';osascript -e 'tell application \"Terminal\" to activate'",
+                        version.getCandidate(), version.getIdentifier()));
     }
 
     private void copyPathToClipboard(Version version) {
-        execute(() -> {
-            Toolkit kit = Toolkit.getDefaultToolkit();
-            Clipboard clip = kit.getSystemClipboard();
-            StringSelection ss = new StringSelection(version.getPath());
-            clip.setContents(ss, ss);
-        });
+        copyPathToClipboard(version.getPath());
+    }
+
+    private void copyPathToClipboard(String content) {
+        Toolkit kit = Toolkit.getDefaultToolkit();
+        Clipboard clip = kit.getSystemClipboard();
+        StringSelection ss = new StringSelection(content);
+        clip.setContents(ss, ss);
     }
 
     private void revealInFinder(Version version) {
-        execute(() -> {
-            ProcessBuilder pb = new ProcessBuilder("open", version.getPath());
-            try {
-                Process process = pb.start();
-                process.waitFor();
-            } catch (IOException | InterruptedException e) {
-                e.printStackTrace();
-            }
-        });
+        revealInFinder(version.getPath());
+    }
+
+    private void revealInFinder(String path) {
+        ProcessBuilder pb = new ProcessBuilder("open", path);
+        try {
+            Process process = pb.start();
+            process.waitFor();
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     private static String toLabel(Version version) {
@@ -487,6 +505,8 @@ public class TaskTray {
             label += " (local only)";
         } else if (version.isInstalled()) {
             label += " (installed)";
+        } else if (version instanceof NotRegisteredVersion) {
+            label += " (detected)";
         }
         return label;
     }

@@ -61,6 +61,15 @@ public class Version {
         return getInstallationDir().toFile().exists() && Files.isSymbolicLink(getInstallationDir());
     }
 
+    /**
+     * returns true if the JDK is detected by Shogun, not buy SDKMAN!
+     *
+     * @return true if the JDK is detected by Shogun, not buy SDKMAN!
+     */
+    public boolean isDetected() {
+        return false;
+    }
+
     boolean isArchived() {
         return getArchiveFile().exists();
     }

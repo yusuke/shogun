@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 
 public class SDK {
     private final static Logger logger = LoggerFactory.getLogger();
-    private final static String SHOGUN_VERSION;
+    public final static String SHOGUN_VERSION;
 
     static {
         Properties p = new Properties();
@@ -205,7 +205,11 @@ public class SDK {
     }
 
     public void install(Version version) {
-        runSDK(String.format("install %s %s", version.getCandidate(), version.getIdentifier()));
+        if (version instanceof NotRegisteredVersion) {
+            installLocal(version.getCandidate(), version.getIdentifier(), version.getPath());
+        } else {
+            runSDK(String.format("install %s %s", version.getCandidate(), version.getIdentifier()));
+        }
     }
 
     /**
@@ -235,6 +239,10 @@ public class SDK {
         runSDK(String.format("uninstall %s %s", version.getCandidate(), escape(version.getIdentifier())));
     }
 
+    void uninstall(String candidate, String identifier) {
+        runSDK(String.format("uninstall %s %s", candidate, escape(identifier)));
+    }
+
     public List<String> getInstalledCandidates() {
         if (!isInstalled()) {
             throw new IllegalStateException("SDKMAN! not installed!");
@@ -261,6 +269,26 @@ public class SDK {
     public static String runSDK(String command) {
         return SDKLauncher.exec(String.format("source %s/bin/sdkman-init.sh;sdk %s", getSDK_MAN_DIR(), command)).trim();
     }
+
+    static List<String> listLocallyInstalledPaths() {
+        File file = new File(SDK.getSDK_MAN_DIR() + File.separator + "candidates" + File.separator + "java");
+        List<String> list = new ArrayList<>();
+        if (file.exists() && file.isDirectory()) {
+            File[] files = file.listFiles();
+            if (files != null) {
+                for (File file1 : files) {
+                    if (Files.isSymbolicLink(file1.toPath()) && !file1.getName().equals("current")) {
+                        try {
+                            list.add(Files.readSymbolicLink(file1.toPath()).toFile().getAbsolutePath());
+                        } catch (IOException ignore) {
+                        }
+                    }
+                }
+            }
+        }
+        return list;
+    }
+
 
     private static String sdkManDir = null;
 
