@@ -16,6 +16,16 @@ public class NotRegisteredVersion extends JavaVersion {
     }
 
     @Override
+    public boolean isLocallyInstalled() {
+        return false;
+    }
+
+    @Override
+    public boolean isDetected() {
+        return true;
+    }
+
+    @Override
     public String getPath() {
         return file.getAbsolutePath();
     }

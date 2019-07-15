@@ -268,6 +268,14 @@ public class TaskTray {
             this.versions = sdk.list(candidate);
             List<Version> sortedVersions = new ArrayList<>();
             versions.stream().filter(e -> e.isInstalled() || e.isLocallyInstalled()).forEach(sortedVersions::add);
+            if ("java".equals(candidate)) {
+                Platform.isMac(() -> {
+                    logger.debug("Scanning JDK(s) not managed by SDKMAN!");
+                    List<NotRegisteredVersion> jdkList = JDKScanner.scan();
+                    logger.debug("Found {} JDK(s)", jdkList.size());
+                    sortedVersions.addAll(jdkList);
+                });
+            }
             versions.stream().filter(e -> !e.isInstalled() && !e.isLocallyInstalled()).forEach(sortedVersions::add);
             this.versions = sortedVersions;
             invokeLater(() -> {
@@ -280,33 +288,6 @@ public class TaskTray {
                     candidateMenu.add(menu);
                 }
             });
-            if ("java".equals(candidate)) {
-                Platform.isMac(() -> {
-                    logger.debug("Scanning JDK(s) not managed by SDKMAN!");
-                    List<NotRegisteredVersion> jdkList = JDKScanner.scan();
-                    logger.debug("Found {} JDK(s)", jdkList.size());
-                    jdkList.forEach((jdk) -> {
-                        logger.debug("jdk: {} {}", jdk.getIdentifier(), jdk.getPath());
-
-                        invokeLater(() -> {
-                            Menu menu = new Menu(String.format("%s (%s)", jdk, getMessage(Messages.notRegistered)));
-
-                            MenuItem copyPathMenu = new MenuItem(getMessage(Messages.copyPath));
-                            copyPathMenu.addActionListener(e -> copyPathToClipboard(jdk.getPath()));
-                            menu.add(copyPathMenu);
-
-                            MenuItem revealInFinderMenu = new MenuItem(getMessage(Messages.revealInFinder));
-                            revealInFinderMenu.addActionListener(e -> revealInFinder(jdk.getPath()));
-                            menu.add(revealInFinderMenu);
-
-                            MenuItem menuItem = new MenuItem(getMessage(Messages.register));
-                            menuItem.addActionListener(e -> install(jdk));
-                            menu.add(menuItem);
-                            candidateMenu.add(menu);
-                        });
-                    });
-                });
-            }
             setFlushArchivesMenuLabel();
         }
 
@@ -442,17 +423,20 @@ public class TaskTray {
         private void updateMenu(Menu menu, Version version) {
             menu.setLabel(toLabel(version));
             menu.removeAll();
-            if (version.isInstalled() || version.isLocallyInstalled()) {
-                if (!version.isUse()) {
-                    MenuItem menuItem = new MenuItem(getMessage(Messages.makeDefault));
-                    menuItem.addActionListener(e -> setDefault(version));
-                    menu.add(menuItem);
-                }
+            boolean isDetectedJDK = version instanceof NotRegisteredVersion;
 
+
+            if ((version.isInstalled() || version.isLocallyInstalled()) && !version.isUse()) {
+                MenuItem menuItem = new MenuItem(getMessage(Messages.makeDefault));
+                menuItem.addActionListener(e -> setDefault(version));
+                menu.add(menuItem);
+            }
+            if (version.isInstalled() || version.isLocallyInstalled()) {
                 MenuItem openInTerminalMenu = new MenuItem(getMessage(Messages.openInTerminal, version.getIdentifier()));
                 openInTerminalMenu.addActionListener(e -> openInTerminal(version));
                 menu.add(openInTerminalMenu);
-
+            }
+            if (isDetectedJDK || version.isInstalled() || version.isLocallyInstalled()) {
                 MenuItem copyPathMenu = new MenuItem(getMessage(Messages.copyPath));
                 copyPathMenu.addActionListener(e -> copyPathToClipboard(version));
                 menu.add(copyPathMenu);
@@ -522,6 +506,8 @@ public class TaskTray {
             label += " (local only)";
         } else if (version.isInstalled()) {
             label += " (installed)";
+        } else if (version instanceof NotRegisteredVersion) {
+            label += " (detected)";
         }
         return label;
     }
