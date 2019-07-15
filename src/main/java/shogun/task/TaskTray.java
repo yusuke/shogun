@@ -459,30 +459,26 @@ public class TaskTray {
     }
 
     private void openInTerminal(Version version) {
-        execute(() -> SDKLauncher.exec("bash",
+        SDKLauncher.exec("bash",
                 "-c", String.format("osascript -e 'tell application \"Terminal\" to do script \"sdk use %s %s\"';osascript -e 'tell application \"Terminal\" to activate'",
-                        version.getCandidate(), version.getIdentifier())));
+                        version.getCandidate(), version.getIdentifier()));
     }
 
     private void copyPathToClipboard(Version version) {
-        execute(() -> {
-            Toolkit kit = Toolkit.getDefaultToolkit();
-            Clipboard clip = kit.getSystemClipboard();
-            StringSelection ss = new StringSelection(version.getPath());
-            clip.setContents(ss, ss);
-        });
+        Toolkit kit = Toolkit.getDefaultToolkit();
+        Clipboard clip = kit.getSystemClipboard();
+        StringSelection ss = new StringSelection(version.getPath());
+        clip.setContents(ss, ss);
     }
 
     private void revealInFinder(Version version) {
-        execute(() -> {
-            ProcessBuilder pb = new ProcessBuilder("open", version.getPath());
-            try {
-                Process process = pb.start();
-                process.waitFor();
-            } catch (IOException | InterruptedException e) {
-                e.printStackTrace();
-            }
-        });
+        ProcessBuilder pb = new ProcessBuilder("open", version.getPath());
+        try {
+            Process process = pb.start();
+            process.waitFor();
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     private static String toLabel(Version version) {
