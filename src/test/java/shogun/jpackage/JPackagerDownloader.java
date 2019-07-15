@@ -60,9 +60,9 @@ class JPackagerDownloader {
                 // jpackager.exe needs to be located in %JAVA_HOME%\bin
                 //noinspection Since15
                 Files.move(bin, Path.of(System.getProperty("java.home") + File.separator + "bin" + File.separator + "jpackager.exe"));
-                // jdk.packager.jar needs to be located in %JAVA_HOME%\jmods
+                // jdk.packager.jar needs to be located in %JAVA_HOME%\bin
                 //noinspection Since15
-                Files.move(packagerRoot.resolve("jdk.packager.jar"), Path.of(System.getProperty("java.home") + File.separator + "jmods" + File.separator + "jdk.packager.jar"));
+                Files.move(packagerRoot.resolve("jdk.packager.jar"), Path.of(System.getProperty("java.home") + File.separator + "bin" + File.separator + "jdk.packager.jar"));
             }
         }
     }
