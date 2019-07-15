@@ -40,8 +40,8 @@ class TaskTrayTest {
 
         SDK sdk = new SDK();
         List<String> installedCandidates = sdk.getInstalledCandidates();
-        // number of installed candidates + Other candidates + SDKMAN version + Quit
-        int menuCount = 3;
+        // number of installed candidates + Other candidates + SDKMAN version + Shogun version + Quit
+        int menuCount = 4;
 
         assertEquals(installedCandidates.size() + menuCount, rootMenu.getItemCount(), "showing all installed candidates");
         List<String> strings = sdk.listCandidates();

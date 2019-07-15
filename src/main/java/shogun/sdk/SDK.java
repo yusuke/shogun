@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 
 public class SDK {
     private final static Logger logger = LoggerFactory.getLogger();
-    private final static String SHOGUN_VERSION;
+    public final static String SHOGUN_VERSION;
 
     static {
         Properties p = new Properties();
@@ -233,7 +233,7 @@ public class SDK {
         runSDK(String.format("uninstall %s %s", version.getCandidate(), escape(version.getIdentifier())));
     }
 
-    public void uninstall(String candidate, String identifier) {
+    void uninstall(String candidate, String identifier) {
         runSDK(String.format("uninstall %s %s", candidate, escape(identifier)));
     }
 

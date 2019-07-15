@@ -30,6 +30,7 @@ public class TaskTray {
     final PopupMenu popup = new PopupMenu();
     final Menu availableCandidatesMenu = new Menu(getMessage(Messages.availableCandidates));
     final Menu versionMenu = new Menu();
+    private final MenuItem shogunVersionMenu = new Menu("Shogun " + SDK.SHOGUN_VERSION);
     private final MenuItem flushArchivesMenu = new MenuItem();
 
     private final MenuItem quitMenu = new MenuItem(getMessage(Messages.quit));
@@ -59,6 +60,8 @@ public class TaskTray {
 
             popup.add(versionMenu);
 
+            shogunVersionMenu.setEnabled(false);
+            popup.add(shogunVersionMenu);
             quitMenu.addActionListener(e -> quit());
             popup.add(quitMenu);
         });
