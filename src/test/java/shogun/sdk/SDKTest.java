@@ -56,7 +56,8 @@ class SDKTest {
         SDK sdk = new SDK();
         assumeTrue(sdk.isInstalled());
         List<Version> versions = sdk.list("java");
-        assertTrue(30 < versions.size());
+        assertTrue(30 < versions.size(),
+                () -> String.format("java version.size grater equal to [%d] but was [%d]", 30, versions.size()));
 
         List<String> installedCandidates = sdk.getInstalledCandidates();
         assertTrue(installedCandidates.contains("java"));
@@ -176,10 +177,14 @@ class SDKTest {
             }
 
             boolean result = sdk.installLocal("java", localDummuyJava, dummyJDKPath);
-            assertTrue(result);
+            assertTrue(result,
+                    () -> String.format(
+                        "installLocal {%s} to {%s} must be [%s] but was [%s]", localDummuyJava, dummyJDKPath, true, result));
             boolean result2 = sdk.installLocal("java", localDummuyJava, dummyJDKPath);
             // already exists
-            assertFalse(result2);
+            assertFalse(result2,
+                    () -> String.format(
+                        "installLocal {%s} to {%s} must be [%s] but was [%s]", localDummuyJava, dummyJDKPath, false, result));
 
             List<Version> javaList2 = sdk.list("java");
             Optional<Version> locallyInstalled = javaList2.stream().filter(e -> e.getIdentifier().equals(localDummuyJava)).findFirst();
@@ -205,7 +210,8 @@ class SDKTest {
         SDK sdk = new SDK();
         assumeTrue(sdk.isInstalled());
         List<String> list = sdk.listCandidates();
-        assertTrue(10 < list.size());
+        assertTrue(10 < list.size(),
+            () -> String.format("list.size greater than [%d] but was [%d]",10, list.size()));
         assertEquals("ant", list.get(0));
         assertEquals("asciidoctorj", list.get(1));
     }
@@ -215,7 +221,8 @@ class SDKTest {
     void parseList() throws URISyntaxException, IOException {
         List<String> javaVersions = Files.readAllLines(Paths.get(SDKTest.class.getResource("/shogun/list.txt").toURI()));
         List<String> candidates = SDK.parseList(javaVersions);
-        assertTrue(10 < candidates.size());
+        assertTrue(10 < candidates.size(),
+            () -> String.format("candidate.size greater than [%d] but was [%d]",10, candidates.size()));
         assertEquals("ant", candidates.get(0));
         assertEquals("asciidoctorj", candidates.get(1));
     }
@@ -328,7 +335,8 @@ class SDKTest {
 
         // SDKMAN X.Y.Z+nnn
         String version = sdk.getVersion();
-        assertTrue(version.endsWith(versionFullString));
+        assertTrue(version.endsWith(versionFullString),
+            () -> String.format("sdk.version must be end with [%s] but was [%s]", versionFullString, version));
     }
 
     @Test

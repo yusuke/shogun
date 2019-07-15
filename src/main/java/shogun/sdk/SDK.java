@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class SDK {
@@ -217,7 +218,12 @@ public class SDK {
         if (identifier.contains(" ")) {
             throw new IllegalArgumentException("identifier should not contain white space(s).");
         }
-        String result = runSDK(String.format("install %s %s %s", candidate, escape(identifier), escape(path)));
+        var installPath = escape(path);
+        var matcher = Pattern.compile("^[/]?([a-zA-Z])[:]?[\\\\|/]?(.*)$").matcher(installPath);
+        if (matcher.matches()) {
+            installPath = matcher.replaceAll("/$1/$2").replaceAll("\\\\", "/");
+        }
+        String result = runSDK(String.format("install %s %s %s", candidate, escape(identifier), installPath));
         return !result.contains("Invalid path!") && !result.contains("already installed.");
     }
 
