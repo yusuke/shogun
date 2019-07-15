@@ -337,13 +337,13 @@ public class TaskTray {
         }
 
         void install(Version version) {
+            int response = skipConfirmation ? JOptionPane.OK_OPTION :
+                    JOptionPane.showConfirmDialog(thisFrameMakesDialogsAlwaysOnTop,
+                            getMessage(Messages.confirmInstallMessage, version.getCandidate(), version.toString()),
+                            getMessage(Messages.confirmInstallTitle, version.getCandidate(), version.toString()), JOptionPane.OK_CANCEL_OPTION,
+                            QUESTION_MESSAGE, dialogIcon);
             execute(() -> {
                 logger.debug("Install: {}", version);
-                int response = skipConfirmation ? JOptionPane.OK_OPTION :
-                        JOptionPane.showConfirmDialog(thisFrameMakesDialogsAlwaysOnTop,
-                                getMessage(Messages.confirmInstallMessage, version.getCandidate(), version.toString()),
-                                getMessage(Messages.confirmInstallTitle, version.getCandidate(), version.toString()), JOptionPane.OK_CANCEL_OPTION,
-                                QUESTION_MESSAGE, dialogIcon);
                 if (response == JOptionPane.OK_OPTION) {
                     var wasInstalled = isInstalled();
                     sdk.install(version);
@@ -359,13 +359,13 @@ public class TaskTray {
         }
 
         void uninstall(Version version) {
+            int response = skipConfirmation ? JOptionPane.OK_OPTION :
+                    JOptionPane.showConfirmDialog(thisFrameMakesDialogsAlwaysOnTop,
+                            getMessage(Messages.confirmUninstallMessage, version.getCandidate(), version.toString()),
+                            getMessage(Messages.confirmUninstallTitle, version.getCandidate(), version.toString()), JOptionPane.OK_CANCEL_OPTION,
+                            QUESTION_MESSAGE, dialogIcon);
             execute(() -> {
                 logger.debug("Uninstall: {}", version);
-                int response = skipConfirmation ? JOptionPane.OK_OPTION :
-                        JOptionPane.showConfirmDialog(thisFrameMakesDialogsAlwaysOnTop,
-                                getMessage(Messages.confirmUninstallMessage, version.getCandidate(), version.toString()),
-                                getMessage(Messages.confirmUninstallTitle, version.getCandidate(), version.toString()), JOptionPane.OK_CANCEL_OPTION,
-                                QUESTION_MESSAGE, dialogIcon);
                 if (response == JOptionPane.OK_OPTION) {
                     var wasInstalled = isInstalled();
                     sdk.uninstall(version);
