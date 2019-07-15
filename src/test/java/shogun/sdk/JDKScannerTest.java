@@ -21,8 +21,9 @@ class JDKScannerTest {
         String version = "15.0.1";
         Path dummyJDK = createDummyJDK(vendor, version);
         List<NotRegisteredVersion> scan = JDKScanner.scan();
-        assertNotNull(scan);
         SDK sdk = new SDK();
+        sdk.uninstall("java", version);
+        assertNotNull(scan);
 
         assertTrue(0 < scan.size());
         Optional<NotRegisteredVersion> first = scan.stream().filter(e -> e.getVersion().equals(version)).findFirst();
