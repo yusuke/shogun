@@ -5,7 +5,6 @@ public class JavaVersion extends Version {
     private final String identifier;
     private final String vendor;
 
-    @SuppressWarnings("SameParameterValue")
     JavaVersion(String candidate, String vendor, boolean use, String version, String dist, String status, String identifier) {
         super(candidate, use, version, status);
         this.vendor = vendor;

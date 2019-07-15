@@ -1,9 +1,9 @@
-package shogun.jdk;
+package shogun.sdk;
 
 import org.slf4j.Logger;
 import shogun.logging.LoggerFactory;
 
-final class Platform {
+public final class Platform {
     private final static Logger logger = LoggerFactory.getLogger();
 
     private static final OS platform;
@@ -26,7 +26,7 @@ final class Platform {
         }
     }
 
-    static void isMac(Runnable runnable) {
+    public static void isMac(Runnable runnable) {
         if (platform == OS.MACOS) {
             try {
                 runnable.run();

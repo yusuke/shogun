@@ -15,5 +15,9 @@ enum Messages {
     copyPath,
     refresh,
     flushArchives,
-    availableCandidates
+    availableCandidates,
+    notRegistered,
+    register,
+    confirmRegisterMessage,
+    confirmRegisterTitle
 }
