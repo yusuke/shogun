@@ -7,10 +7,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -18,38 +15,66 @@ class JDKScannerTest {
     @Test
     void scan() throws IOException {
         String vendor = "AdoptOpenJDK";
-        String version = "15.0.1";
-        Path dummyJDK = createDummyJDK(vendor, version);
-        List<NotRegisteredVersion> scan = JDKScanner.scan();
+        String[] versions = {
+                // "15.0.1",
+                "15.0.2", "15.0.3", "15.0.4"};
+        File[] files = {
+                // requires administration privilege
+                // new File("/Library/Java/JavaVirtualMachines"),
+                new File(System.getProperty("user.home")),
+                new File(System.getProperty("user.home") + File.separator + "Library/Java/JavaVirtualMachines"),
+                new File(System.getProperty("user.home") + File.separator + "Downloads")};
+
+        List<NotRegisteredVersion> before = JDKScanner.scan();
+        assertNotNull(before);
         SDK sdk = new SDK();
-        sdk.uninstall("java", version);
-        assertNotNull(scan);
+
+        List<Path> dummyJDKs = new ArrayList<>();
+        for (int i = 0; i < files.length; i++) {
+            File file = files[i];
+            Path dummyJDK = createDummyJDK(file, vendor, versions[i]);
+            dummyJDKs.add(dummyJDK);
+            System.out.println("created:" + dummyJDK.toFile().getAbsolutePath());
+        }
+
+        List<NotRegisteredVersion> scan = JDKScanner.scan();
+        assertEquals(before.size() + 3, scan.size());
 
         assertTrue(0 < scan.size());
-        Optional<NotRegisteredVersion> first = scan.stream().filter(e -> e.getVersion().equals(version)).findFirst();
-        assertTrue(first.isPresent());
-        NotRegisteredVersion jdkToRegister = first.get();
-        try {
+        for (NotRegisteredVersion notRegisteredVersion : scan) {
+            System.out.println("found:" + notRegisteredVersion.getPath());
+        }
+        for (String version : versions) {
+            Optional<NotRegisteredVersion> first = scan.stream().filter(e -> e.getVersion().equals(version)).findFirst();
+            assertTrue(first.isPresent());
+            NotRegisteredVersion jdkToRegister = first.get();
             sdk.install(jdkToRegister);
+        }
+        try {
             List<NotRegisteredVersion> scan2 = JDKScanner.scan();
-            assertEquals(scan.size() - 1, scan2.size());
+            assertEquals(scan.size() - 3, scan2.size());
         } finally {
-            sdk.uninstall(jdkToRegister);
-            //noinspection ResultOfMethodCallIgnored
-            Files.walk(dummyJDK)
-                    .sorted(Comparator.reverseOrder())
-                    .map(Path::toFile)
-                    .forEach(File::delete);
+            for (String version : versions) {
+                sdk.uninstall("java", version);
+            }
+            for (Path dummyJDK : dummyJDKs) {
+                //noinspection ResultOfMethodCallIgnored
+                Files.walk(dummyJDK)
+                        .sorted(Comparator.reverseOrder())
+                        .map(Path::toFile)
+                        .forEach(File::delete);
+
+            }
+
         }
     }
 
     @NotNull
-    private static Path createDummyJDK(String dummyVendor, String version) throws IOException {
-        String home = System.getProperty("user.home");
+    private static Path createDummyJDK(File file, String dummyVendor, String version) throws IOException {
         long time = System.currentTimeMillis();
-        Path dummyJDKHome = Path.of(home + "/Downloads/shogun_dummyJDK" + time);
-        Path bin = Path.of(home + "/Downloads/shogun_dummyJDK" + time + "/Contents/Home/bin");
-        Path dummyJava = Path.of(home + "/Downloads/shogun_dummyJDK" + time + "/Contents/Home/bin/java");
+        Path dummyJDKHome = Path.of(file.getAbsolutePath() + "/shogun_dummyJDK" + time);
+        Path bin = Path.of(file.getAbsolutePath() + "/shogun_dummyJDK" + time + "/Contents/Home/bin");
+        Path dummyJava = Path.of(file.getAbsolutePath() + "/shogun_dummyJDK" + time + "/Contents/Home/bin/java");
         List<String> strings = Arrays.asList("#!/bin/sh",
                 "echo openjdk version \\\"11.0.3\\\" 2019-04-16",
                 String.format("echo OpenJDK Runtime Environment %s \\(build %s\\)", dummyVendor, version),
