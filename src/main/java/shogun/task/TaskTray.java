@@ -436,7 +436,7 @@ public class TaskTray {
                 openInTerminalMenu.addActionListener(e -> openInTerminal(version));
                 menu.add(openInTerminalMenu);
             }
-            if (isDetectedJDK || version.isInstalled() || version.isLocallyInstalled()) {
+            if (version.isDetected() || version.isInstalled() || version.isLocallyInstalled()) {
                 MenuItem copyPathMenu = new MenuItem(getMessage(Messages.copyPath));
                 copyPathMenu.addActionListener(e -> copyPathToClipboard(version));
                 menu.add(copyPathMenu);
@@ -453,7 +453,7 @@ public class TaskTray {
             }
 
             if (!version.isInstalled() && !version.isLocallyInstalled()) {
-                MenuItem menuItem = new MenuItem(getMessage(Messages.install));
+                MenuItem menuItem = new MenuItem(getMessage(version.isDetected() ? Messages.register : Messages.install));
                 menuItem.addActionListener(e -> install(version));
                 menu.add(menuItem);
             }
@@ -506,7 +506,7 @@ public class TaskTray {
             label += " (local only)";
         } else if (version.isInstalled()) {
             label += " (installed)";
-        } else if (version instanceof NotRegisteredVersion) {
+        } else if (version.isDetected()) {
             label += " (detected)";
         }
         return label;
