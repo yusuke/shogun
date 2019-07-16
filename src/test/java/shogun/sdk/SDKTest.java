@@ -357,6 +357,16 @@ class SDKTest {
     }
 
     @Test
+    void versionRequireUpdate() throws IOException, URISyntaxException {
+        String string = Files.readString(Paths.get(SDKTest.class.getResource("/shogun/version-require-update.txt").toURI()));
+
+        SDK sdk = new SDK();
+        String version = sdk.parseSDKVersion(string);
+        assertEquals("SDKMAN 5.7.3+337", version);
+    }
+
+
+    @Test
     void versionFirst() throws URISyntaxException, IOException {
         // test version description with broadcast message can be parsed.
         String parsedVersion = Files.readString(Paths.get(SDKTest.class.getResource("/shogun/version-first.txt").toURI()));

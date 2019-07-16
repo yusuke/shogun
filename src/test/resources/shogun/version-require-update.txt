@@ -1,0 +1,6 @@
+WARNING: SDKMAN is out-of-date and requires an update. Please run:
+
+  $ sdk update
+
+
+SDKMAN 5.7.3+337
