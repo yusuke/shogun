@@ -28,7 +28,7 @@ class SDKTest {
 
         SDK sdk = new SDK();
         if (sdk.isInstalled()) {
-            assertEquals(new File(System.getProperty("user.home") + File.separator + ".sdkman").getAbsolutePath(), SDK.getSDK_MAN_DIR());
+            assertEquals(new File(System.getProperty("user.home") + File.separator + ".sdkman").compareTo(new File(SDK.getSDK_MAN_DIR())), 0);
         }
     }
 
@@ -56,7 +56,7 @@ class SDKTest {
         SDK sdk = new SDK();
         assumeTrue(sdk.isInstalled());
         List<Version> versions = sdk.list("java");
-        assertTrue(30 < versions.size(),
+        assertTrue(30 <= versions.size(),
                 () -> String.format("java version.size grater equal to [%d] but was [%d]", 30, versions.size()));
 
         List<String> installedCandidates = sdk.getInstalledCandidates();
