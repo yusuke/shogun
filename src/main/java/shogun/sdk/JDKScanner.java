@@ -32,7 +32,7 @@ public class JDKScanner {
                 ).forEach(file -> {
             File javaCommand = new File(file.getAbsoluteFile() + File.separator + "bin" + File.separator + "java");
             if (javaCommand.isFile() && javaCommand.exists()) {
-                String versionString = SDKLauncher.exec("bash", "-c", javaCommand.getAbsolutePath() + " -version");
+                String versionString = SDKLauncher.exec(javaCommand.getAbsolutePath() + " -version");
                 versionList.add(stringToVersion(versionString, file));
             }
         });

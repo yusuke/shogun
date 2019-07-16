@@ -12,15 +12,24 @@ public final class Platform {
         WINDOWS, LINUX, MACOS
     }
 
+    public static final boolean isWindows;
+    public static final boolean isMac;
+    public static final boolean isLinux;
+
     static {
         String os = System.getProperty("os.name").toLowerCase();
-        boolean isWindows = false;
         if (os.contains("nux")) {
             platform = OS.LINUX;
+            isLinux = true;
+            isMac = isWindows = false;
         } else if (os.startsWith("windows")) {
             platform = OS.WINDOWS;
+            isWindows = true;
+            isLinux = isMac = false;
         } else if (os.contains("mac") || os.contains("darwin")) {
             platform = OS.MACOS;
+            isMac = true;
+            isLinux = isWindows = false;
         } else {
             throw new IllegalStateException("Unsupported os:" + os);
         }

@@ -237,9 +237,11 @@ public class SDK {
             throw new IllegalArgumentException("identifier should not contain white space(s).");
         }
         var installPath = escape(path);
-        var matcher = Pattern.compile("^[/]?([a-zA-Z])[:]?[\\\\|/]?(.*)$").matcher(installPath);
-        if (matcher.matches()) {
-            installPath = matcher.replaceAll("/$1/$2").replaceAll("\\\\", "/");
+        if (Platform.isWindows) {
+            var matcher = Pattern.compile("^[/]?([a-zA-Z])[:]?[\\\\|/]?(.*)$").matcher(installPath);
+            if (matcher.matches()) {
+                installPath = matcher.replaceAll("/$1/$2").replaceAll("\\\\", "/");
+            }
         }
         String result = runSDK(String.format("install %s %s %s", candidate, escape(identifier), installPath));
         return !result.contains("Invalid path!") && !result.contains("already installed.");

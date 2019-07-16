@@ -46,7 +46,7 @@ public class SDKLauncher {
     }
 
     private static String getBash() {
-        if (System.getProperty("os.name").toLowerCase().startsWith("windows")) {
+        if (Platform.isWindows) {
             return System.getProperty("shell.path", "c:/Program Files/Git/bin/bash");
         }
         return "bash";

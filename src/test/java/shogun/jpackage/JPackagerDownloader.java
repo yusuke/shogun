@@ -1,6 +1,7 @@
 package shogun.jpackage;
 
 import org.junit.jupiter.api.Test;
+import shogun.sdk.Platform;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -24,12 +25,12 @@ class JPackagerDownloader {
             String fileName = "jdk.packager-";
             String os = System.getProperty("os.name").toLowerCase();
             boolean isWindows = false;
-            if (os.contains("nux")) {
+            if (Platform.isLinux) {
                 fileName += "linux";
-            } else if (os.startsWith("windows")) {
+            } else if (Platform.isWindows) {
                 fileName += "windows";
                 isWindows = true;
-            } else if (os.contains("mac") || os.contains("darwin")) {
+            } else if (Platform.isMac) {
                 fileName += "osx";
             } else {
                 throw new IllegalStateException("Unsupported os:" + os);
@@ -58,10 +59,8 @@ class JPackagerDownloader {
             bin.toFile().setExecutable(true);
             if (isWindows) {
                 // jpackager.exe needs to be located in %JAVA_HOME%\bin
-                //noinspection Since15
                 Files.move(bin, Path.of(System.getProperty("java.home") + File.separator + "bin" + File.separator + "jpackager.exe"));
                 // jdk.packager.jar needs to be located in %JAVA_HOME%\bin
-                //noinspection Since15
                 Files.move(packagerRoot.resolve("jdk.packager.jar"), Path.of(System.getProperty("java.home") + File.separator + "bin" + File.separator + "jdk.packager.jar"));
             }
         }
