@@ -73,21 +73,31 @@ public class TaskTray {
 
 
     private void invokeLater(Runnable runnable) {
-        duke.startRoll();
-        EventQueue.invokeLater(() -> {
-                    runnable.run();
-                    duke.stopRoll();
-                }
-        );
+        if (Thread.currentThread().getName().startsWith("AWT-EventQueue")) {
+            // already in event queue
+            runnable.run();
+        } else {
+            duke.startRoll();
+            EventQueue.invokeLater(() -> {
+                        runnable.run();
+                        duke.stopRoll();
+                    }
+            );
+        }
     }
 
     private void execute(Runnable runnable) {
-        duke.startRoll();
-        executorService.execute(() -> {
-                    runnable.run();
-                    duke.stopRoll();
-                }
-        );
+        if (Thread.currentThread().getName().startsWith(EXECUTE_THREAD_NAME)) {
+            // already in execute thread
+            runnable.run();
+        } else {
+            duke.startRoll();
+            executorService.execute(() -> {
+                        runnable.run();
+                        duke.stopRoll();
+                    }
+            );
+        }
     }
 
     private void versionMenuClicked() {
@@ -113,12 +123,13 @@ public class TaskTray {
         dukeLatch.await(60, TimeUnit.SECONDS);
     }
 
+    private final String DUKE_THREAD_NAME = "Duke roller";
     class DukeThread extends Thread {
         final AtomicInteger integer = new AtomicInteger();
 
 
         DukeThread() {
-            setName("Duke roller");
+            setName(DUKE_THREAD_NAME);
             setDaemon(true);
         }
 
@@ -168,6 +179,7 @@ public class TaskTray {
 
     private final ImageIcon dialogIcon = new ImageIcon(Toolkit.getDefaultToolkit().createImage(ClassLoader.getSystemResource("images/duke-128x128.png")));
 
+    private final String EXECUTE_THREAD_NAME = "Shogun Execute Thread";
     private final ExecutorService executorService = Executors.newFixedThreadPool(1,
             new ThreadFactory() {
                 int count = 0;
@@ -175,7 +187,7 @@ public class TaskTray {
                 @Override
                 public Thread newThread(@NotNull Runnable r) {
                     Thread thread = new Thread(r);
-                    thread.setName(String.format("Shogun Executor[%d]", count++));
+                    thread.setName(String.format(EXECUTE_THREAD_NAME + "[%d]", count++));
                     thread.setDaemon(true);
                     return thread;
                 }
