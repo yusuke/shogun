@@ -22,5 +22,5 @@ enum Messages {
     updateSDKMan,
     confirmRegisterTitle,
     offline,
-    updateAvailable
+    showInExplorer, updateAvailable
 }

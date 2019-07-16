@@ -479,7 +479,7 @@ public class TaskTray {
                 copyPathMenu.addActionListener(e -> copyPathToClipboard(version));
                 menu.add(copyPathMenu);
 
-                MenuItem revealInFinderMenu = new MenuItem(getMessage(Messages.revealInFinder));
+                MenuItem revealInFinderMenu = new MenuItem(getMessage(Platform.isMac ? Messages.revealInFinder : Messages.showInExplorer));
                 revealInFinderMenu.addActionListener(e -> revealInFinder(version));
                 menu.add(revealInFinderMenu);
             }
@@ -501,8 +501,9 @@ public class TaskTray {
 
 
     private void openInTerminal(Version version) {
-        SDKLauncher.exec(String.format("osascript -e 'tell application \"Terminal\" to do script \"sdk use %s %s\"';osascript -e 'tell application \"Terminal\" to activate'",
-                        version.getCandidate(), version.getIdentifier()));
+        Platform.isMac(() ->
+                SDKLauncher.exec(String.format("osascript -e 'tell application \"Terminal\" to do script \"sdk use %s %s\"';osascript -e 'tell application \"Terminal\" to activate'",
+                        version.getCandidate(), version.getIdentifier())));
     }
 
     private void copyPathToClipboard(Version version) {
@@ -520,14 +521,23 @@ public class TaskTray {
         revealInFinder(version.getPath());
     }
 
-    private void revealInFinder(String path) {
-        ProcessBuilder pb = new ProcessBuilder("open", path);
-        try {
-            Process process = pb.start();
-            process.waitFor();
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-        }
+    private static void revealInFinder(String path) {
+        Platform.isMac(() -> {
+            ProcessBuilder pb = new ProcessBuilder("open", path);
+            try {
+                Process process = pb.start();
+                process.waitFor();
+            } catch (IOException | InterruptedException e) {
+                e.printStackTrace();
+            }
+        });
+        Platform.isWindows(() -> {
+            try {
+                Runtime.getRuntime().exec("cmd /c start " + path);
+            } catch (IOException e) {
+                logger.error("Failed to open command prompt.", e);
+            }
+        });
     }
 
     private static String toLabel(Version version) {

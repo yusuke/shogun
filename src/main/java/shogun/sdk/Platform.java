@@ -46,7 +46,7 @@ public final class Platform {
         }
     }
 
-    static void isWindows(Runnable runnable) {
+    public static void isWindows(Runnable runnable) {
         if (platform == OS.WINDOWS) {
             try {
                 runnable.run();
