@@ -29,9 +29,10 @@ public class TaskTray {
     boolean skipConfirmation = false;
     final PopupMenu popup = new PopupMenu();
     final Menu availableCandidatesMenu = new Menu(getMessage(Messages.availableCandidates));
-    final Menu versionMenu = new Menu();
+    MenuItem versionMenu = new Menu();
     private final MenuItem shogunVersionMenu = new MenuItem("Shogun " + SDK.SHOGUN_VERSION);
     private final MenuItem flushArchivesMenu = new MenuItem();
+    private MenuItem updateMenu = new MenuItem(getMessage(Messages.updateSDKMan));
 
     private final MenuItem quitMenu = new MenuItem(getMessage(Messages.quit));
 
@@ -47,20 +48,10 @@ public class TaskTray {
             animatedDuke.add(image);
         }
         duke = new DukeThread();
+        flushArchivesMenu.addActionListener(e -> flushArchivesClicked());
+        shogunVersionMenu.setEnabled(false);
         invokeLater(() -> {
             popup.add(availableCandidatesMenu);
-
-            MenuItem refreshMenu = new MenuItem(getMessage(Messages.refresh));
-            refreshMenu.addActionListener(e -> versionMenuClicked());
-            versionMenu.add(refreshMenu);
-
-            setFlushArchivesMenuLabel();
-            flushArchivesMenu.addActionListener(e -> flushArchivesClicked());
-            versionMenu.add(flushArchivesMenu);
-
-            popup.add(versionMenu);
-
-            shogunVersionMenu.setEnabled(false);
             popup.add(shogunVersionMenu);
             quitMenu.addActionListener(e -> quit());
             popup.add(quitMenu);
@@ -79,8 +70,12 @@ public class TaskTray {
         } else {
             duke.startRoll();
             EventQueue.invokeLater(() -> {
-                        runnable.run();
-                        duke.stopRoll();
+                try {
+                    runnable.run();
+                    duke.stopRoll();
+                } catch (Exception e) {
+                    logger.error("Exception in execute", e);
+                }
                     }
             );
         }
@@ -93,19 +88,35 @@ public class TaskTray {
         } else {
             duke.startRoll();
             executorService.execute(() -> {
-                        runnable.run();
-                        duke.stopRoll();
+                try {
+                    runnable.run();
+                    duke.stopRoll();
+                } catch (Exception e) {
+                    logger.error("Exception in execute", e);
+                }
                     }
             );
         }
     }
 
-    private void versionMenuClicked() {
-        if (sdk.isInstalled()) {
-            execute(this::initializeMenuItems);
+    private void refreshMenuClicked() {
+        execute(this::initializeMenuItems);
+    }
 
-        } else {
-            installSDKMAN();
+
+    private void installSDK() {
+        execute(() -> {
+            sdk.install();
+            initializeMenuItems();
+        });
+    }
+
+    private void updateSDK() {
+        if (sdk.isUpdateAvailable()) {
+            execute(() -> {
+                sdk.updateSDKMAN();
+                initializeMenuItems();
+            });
         }
     }
 
@@ -123,13 +134,12 @@ public class TaskTray {
         dukeLatch.await(60, TimeUnit.SECONDS);
     }
 
-    private final String DUKE_THREAD_NAME = "Duke roller";
     class DukeThread extends Thread {
         final AtomicInteger integer = new AtomicInteger();
 
 
         DukeThread() {
-            setName(DUKE_THREAD_NAME);
+            setName("Duke roller");
             setDaemon(true);
         }
 
@@ -221,7 +231,7 @@ public class TaskTray {
 
     private synchronized void initializeMenuItems() {
         logger.debug("Initializing menu items.");
-        setVersionMenuLabel();
+        initializeVersionMenu();
 
         List<String> installedCandidates = new ArrayList<>();
         if (sdk.isInstalled()) {
@@ -246,17 +256,35 @@ public class TaskTray {
         installedCandidates.forEach(e -> candidateMap.get(e).refreshMenus());
     }
 
-    private void setVersionMenuLabel() {
-        String label;
+    private void initializeVersionMenu() {
+        invokeLater(() -> popup.remove(versionMenu));
         if (sdk.isInstalled()) {
-            String version = sdk.getVersion();
-            logger.debug("SDKMAN! version {} detected.", version);
-            label = version + (sdk.isOffline() ? " (offline)" : "");
+            Menu newVersionMenu = new Menu();
+            String label = sdk.getVersion();
+            if (sdk.isOffline()) {
+                label += " (" + getMessage(Messages.offline) + ")";
+            }
+            if (sdk.isUpdateAvailable()) {
+                label += " (" + getMessage(Messages.updateAvailable) + ")";
+                updateMenu.addActionListener(e -> updateSDK());
+                newVersionMenu.add(updateMenu);
+            }
+            newVersionMenu.setLabel(label);
+
+            MenuItem refreshMenu = new MenuItem(getMessage(Messages.refresh));
+            refreshMenu.addActionListener(e -> refreshMenuClicked());
+            newVersionMenu.add(refreshMenu);
+
+            setFlushArchivesMenuLabel();
+            newVersionMenu.add(flushArchivesMenu);
+
+            versionMenu = newVersionMenu;
         } else {
-            logger.debug("SDKMAN! not installed.");
-            label = getMessage(Messages.installSDKMan);
+            versionMenu = new MenuItem(getMessage(Messages.installSDKMan));
+            versionMenu.addActionListener(e -> installSDK());
         }
-        invokeLater(() -> versionMenu.setLabel(label));
+
+        invokeLater(() -> popup.insert(versionMenu, popup.getItemCount() - 2));
     }
 
     class Candidate {
@@ -435,8 +463,6 @@ public class TaskTray {
         private void updateMenu(Menu menu, Version version) {
             menu.setLabel(toLabel(version));
             menu.removeAll();
-            boolean isDetectedJDK = version instanceof NotRegisteredVersion;
-
 
             if ((version.isInstalled() || version.isLocallyInstalled()) && !version.isUse()) {
                 MenuItem menuItem = new MenuItem(getMessage(Messages.makeDefault));
@@ -473,12 +499,6 @@ public class TaskTray {
 
     }
 
-    private void installSDKMAN() {
-        execute(() -> {
-            sdk.install();
-            invokeLater(this::initializeMenuItems);
-        });
-    }
 
     private void openInTerminal(Version version) {
         SDKLauncher.exec("bash",

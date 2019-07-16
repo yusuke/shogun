@@ -29,7 +29,10 @@ public class SDKLauncher {
             process.waitFor();
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             new FileInputStream(tempFile).transferTo(baos);
-            return trimANSIEscapeCodes(baos.toString());
+            logger.debug("Response:");
+            String response = trimANSIEscapeCodes(baos.toString());
+            logger.debug(response);
+            return response;
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }

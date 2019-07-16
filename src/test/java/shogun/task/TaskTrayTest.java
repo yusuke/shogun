@@ -195,6 +195,10 @@ class TaskTrayTest {
         return new Element(menu);
     }
 
+    Element $(MenuItem menuItem) {
+        return new Element((Menu) menuItem);
+    }
+
     class Element {
         private MenuItem menu;
 
