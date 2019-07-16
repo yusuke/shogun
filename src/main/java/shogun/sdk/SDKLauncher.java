@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import shogun.logging.LoggerFactory;
 
 import java.io.*;
+import java.lang.ProcessBuilder.Redirect;
 
 public class SDKLauncher {
     private final static Logger logger = LoggerFactory.getLogger();
@@ -17,9 +18,15 @@ public class SDKLauncher {
     public static String exec(String... command) {
         try {
             File tempFile = File.createTempFile("sdk", "log");
-            command[command.length - 1] = command[command.length - 1] + " >" + tempFile.getAbsolutePath() + " 2>&1";
             logger.debug("Command to be executed: {}", (Object) command);
-            ProcessBuilder pb = new ProcessBuilder(command);
+            String[] commands = new String[command.length + 2];
+            commands[0] = getBash();
+            commands[1] = "-c";
+            System.arraycopy(command, 0, commands, 2, command.length);
+            ProcessBuilder pb = new ProcessBuilder(commands)
+                    .directory(new File("."))
+                    .redirectErrorStream(true)
+                    .redirectOutput(Redirect.to(tempFile));
             Process process = pb.start();
             OutputStream outputStream = process.getOutputStream();
             PrintWriter printWriter = new PrintWriter(outputStream);
@@ -36,6 +43,13 @@ public class SDKLauncher {
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static String getBash() {
+        if (System.getProperty("os.name").toLowerCase().startsWith("windows")) {
+            return System.getProperty("shell.path", "c:/Program Files/Git/bin/bash");
+        }
+        return "bash";
     }
 
     /**

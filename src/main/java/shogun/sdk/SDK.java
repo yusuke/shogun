@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class SDK {
@@ -37,7 +38,7 @@ public class SDK {
         if (isInstalled()) {
             throw new IllegalStateException("SDKMAN! already installed.");
         }
-        return SDKLauncher.exec("bash", "-c", "curl -s \"https://get.sdkman.io\" | bash").trim();
+        return SDKLauncher.exec("curl -s \"https://get.sdkman.io\" | bash").trim();
     }
 
     public String updateSDKMAN() {
@@ -235,7 +236,12 @@ public class SDK {
         if (identifier.contains(" ")) {
             throw new IllegalArgumentException("identifier should not contain white space(s).");
         }
-        String result = runSDK(String.format("install %s %s %s", candidate, escape(identifier), escape(path)));
+        var installPath = escape(path);
+        var matcher = Pattern.compile("^[/]?([a-zA-Z])[:]?[\\\\|/]?(.*)$").matcher(installPath);
+        if (matcher.matches()) {
+            installPath = matcher.replaceAll("/$1/$2").replaceAll("\\\\", "/");
+        }
+        String result = runSDK(String.format("install %s %s %s", candidate, escape(identifier), installPath));
         return !result.contains("Invalid path!") && !result.contains("already installed.");
     }
 
@@ -275,7 +281,7 @@ public class SDK {
     }
 
     public static String runSDK(String command) {
-        return SDKLauncher.exec("bash", "-c", String.format("source %s/bin/sdkman-init.sh;sdk %s", getSDK_MAN_DIR(), command)).trim();
+        return SDKLauncher.exec(String.format("source %s/bin/sdkman-init.sh;sdk %s", getSDK_MAN_DIR(), command)).trim();
     }
 
     static List<String> listLocallyInstalledPaths() {
@@ -302,7 +308,11 @@ public class SDK {
 
     static String getSDK_MAN_DIR() {
         if (sdkManDir == null) {
-            sdkManDir = SDKLauncher.exec("bash", "-c", "source ~/.bash_profile;echo $SDKMAN_DIR").trim();
+            sdkManDir = SDKLauncher.exec("source ~/.bash_profile>/dev/null;echo $SDKMAN_DIR").trim();
+            var matcher = Pattern.compile("^/([a-zA-Z])(/.*)$").matcher(sdkManDir);
+            if (matcher.matches()) {
+                sdkManDir = matcher.replaceFirst("$1:$2");
+            }
             logger.debug("SDKMAN_DIR: {}", sdkManDir);
         }
         return sdkManDir;
