@@ -48,16 +48,10 @@ public class Version {
     }
 
     public boolean isInstalled() {
-        if (System.getProperty("os.name").toLowerCase().startsWith("windows")) {
-            return getInstallationDir().toFile().exists();
-        }
         return getInstallationDir().toFile().exists() && !Files.isSymbolicLink(getInstallationDir());
     }
 
     public boolean isLocallyInstalled() {
-        if (System.getProperty("os.name").toLowerCase().startsWith("windows")) {
-            return getInstallationDir().toFile().exists();
-        }
         return getInstallationDir().toFile().exists() && Files.isSymbolicLink(getInstallationDir());
     }
 
