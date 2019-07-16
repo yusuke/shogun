@@ -40,6 +40,13 @@ public class SDK {
         return SDKLauncher.exec("bash", "-c", "curl -s \"https://get.sdkman.io\" | bash").trim();
     }
 
+    public String updateSDKMAN() {
+        if (!isUpdateAvailable()) {
+            throw new IllegalStateException("SDKMAN! is up to date.");
+        }
+        return runSDK("update");
+    }
+
     public String getVersion() {
         return parseSDKVersion(runSDK("version"));
     }
@@ -92,7 +99,7 @@ public class SDK {
 
 
     String parseSDKVersion(String versionString) {
-        wasOfflineLastTime = isOffline(versionString);
+        checkStatus(versionString);
         String[] split = versionString.split("\n");
         return split[split.length - 1];
     }
@@ -101,24 +108,31 @@ public class SDK {
         return parseVersions(candidate, runSDK("list " + candidate));
     }
 
+    private boolean wasUpdateAvailableLastTime = false;
+
+    public boolean isUpdateAvailable() {
+        return wasUpdateAvailableLastTime;
+    }
+
     private boolean wasOfflineLastTime = false;
 
     public boolean isOffline() {
         return wasOfflineLastTime;
     }
 
-    boolean isOffline(String status) {
-        return wasOfflineLastTime = status.contains("INTERNET NOT REACHABLE!") || status.contains("Offline:");
+    void checkStatus(String status) {
+        wasOfflineLastTime = status.contains("INTERNET NOT REACHABLE!") || status.contains("Offline:");
+        wasUpdateAvailableLastTime = status.contains("SDKMAN is out-of-date and requires an update.");
     }
 
     List<Version> parseVersions(String candidate, String response) {
-        isOffline(response);
+        checkStatus(response);
         if (!isOffline() && candidate.equals("java")) {
             return parseJavaVersions(response);
         }
         List<List<Version>> versionListList = new ArrayList<>();
         for (String line : response.split("\n")) {
-            if ((isOffline() && line.matches("^ [*>].*$")) || (!isOffline() && (line.startsWith(" ") && !line.trim().isEmpty()))) {
+            if ((isOffline() && line.matches("^ [*>].*$")) || (!isOffline() && (line.startsWith(" ") && !line.contains("$") && !line.trim().isEmpty()))) {
                 // line contains version
                 String status = "";
                 boolean currentlyInUse = false;

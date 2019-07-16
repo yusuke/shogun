@@ -19,5 +19,5 @@ enum Messages {
     notRegistered,
     register,
     confirmRegisterMessage,
-    confirmRegisterTitle
+    updateSDKMan, confirmRegisterTitle
 }

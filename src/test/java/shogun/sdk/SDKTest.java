@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 class SDKTest {
@@ -91,6 +92,30 @@ class SDKTest {
         } finally {
             notInstalled.ifPresent(sdk::uninstall);
         }
+    }
+
+    @Test
+    void parseRequireUpdateJava() throws IOException, URISyntaxException {
+        Path path = Paths.get(SDKTest.class.getResource("/shogun/list-java-require-update.txt").toURI());
+        String javaVersions = Files.readString(path);
+        SDK sdk = new SDK();
+        List<Version> versions = sdk.parseVersions("java", javaVersions);
+        assumeFalse(sdk.isOffline());
+        assumeTrue(sdk.isUpdateAvailable());
+        assertEquals(33, versions.size());
+        assertEquals("12.0.1.j9-adpt", versions.get(0).getIdentifier());
+    }
+
+    @Test
+    void parseRequireUpdateAnt() throws IOException, URISyntaxException {
+        Path path = Paths.get(SDKTest.class.getResource("/shogun/list-ant-require-update.txt").toURI());
+        String javaVersions = Files.readString(path);
+        SDK sdk = new SDK();
+        List<Version> versions = sdk.parseVersions("ant", javaVersions);
+        assumeFalse(sdk.isOffline());
+        assumeTrue(sdk.isUpdateAvailable());
+        assertEquals(5, versions.size());
+        assertEquals("1.10.1", versions.get(0).getIdentifier());
     }
 
     @Test
@@ -301,17 +326,17 @@ class SDKTest {
     void isOffline() throws URISyntaxException, IOException {
         String mavenVersions = Files.readString(Paths.get(SDKTest.class.getResource("/shogun/list-maven.txt").toURI()));
         SDK sdk = new SDK();
-        assertFalse(sdk.isOffline(mavenVersions));
+        sdk.checkStatus(mavenVersions);
         assertFalse(sdk.isOffline());
         String offlineResponse = Files.readString(Paths.get(SDKTest.class.getResource("/shogun/offline.txt").toURI()));
 
         SDK sdk1 = new SDK();
-        assertTrue(sdk1.isOffline(offlineResponse));
+        sdk1.checkStatus(offlineResponse);
         assertTrue(sdk1.isOffline());
         String offlineModeResponse = Files.readString((Paths.get(SDKTest.class.getResource("/shogun/offline-mode.txt").toURI())));
 
         SDK sdk2 = new SDK();
-        assertTrue(sdk2.isOffline(offlineModeResponse));
+        sdk2.checkStatus(offlineModeResponse);
         assertTrue(sdk2.isOffline());
     }
 
