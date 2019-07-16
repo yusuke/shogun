@@ -2,6 +2,8 @@ package shogun.sdk;
 
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import shogun.logging.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,6 +14,8 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class JDKScannerTest {
+    private final static Logger logger = LoggerFactory.getLogger();
+
     @Test
     void scan() throws IOException {
         String vendor = "AdoptOpenJDK";
@@ -24,48 +28,63 @@ class JDKScannerTest {
                 new File(System.getProperty("user.home")),
                 new File(System.getProperty("user.home") + File.separator + "Library/Java/JavaVirtualMachines"),
                 new File(System.getProperty("user.home") + File.separator + "Downloads")};
+        deleteSymbolicLinks(versions);
 
         List<NotRegisteredVersion> before = JDKScanner.scan();
         assertNotNull(before);
         SDK sdk = new SDK();
-
         List<Path> dummyJDKs = new ArrayList<>();
-        for (int i = 0; i < files.length; i++) {
-            File file = files[i];
-            Path dummyJDK = createDummyJDK(file, vendor, versions[i]);
-            dummyJDKs.add(dummyJDK);
-            System.out.println("created:" + dummyJDK.toFile().getAbsolutePath());
-        }
-
-        List<NotRegisteredVersion> scan = JDKScanner.scan();
-        assertEquals(before.size() + 3, scan.size());
-
-        assertTrue(0 < scan.size());
-        for (NotRegisteredVersion notRegisteredVersion : scan) {
-            System.out.println("found:" + notRegisteredVersion.getPath());
-        }
-        for (String version : versions) {
-            Optional<NotRegisteredVersion> first = scan.stream().filter(e -> e.getVersion().equals(version)).findFirst();
-            assertTrue(first.isPresent());
-            NotRegisteredVersion jdkToRegister = first.get();
-            sdk.install(jdkToRegister);
-        }
         try {
+            for (int i = 0; i < files.length; i++) {
+                File file = files[i];
+                Path dummyJDK = createDummyJDK(file, vendor, versions[i]);
+                dummyJDKs.add(dummyJDK);
+                logger.debug("created:" + dummyJDK.toFile().getAbsolutePath());
+            }
+
+            List<NotRegisteredVersion> scan = JDKScanner.scan();
+            assertEquals(before.size() + 3, scan.size());
+
+            assertTrue(0 < scan.size());
+            for (NotRegisteredVersion notRegisteredVersion : scan) {
+                logger.debug("found:" + notRegisteredVersion.getPath());
+            }
+            for (String version : versions) {
+                Optional<NotRegisteredVersion> first = scan.stream().filter(e -> e.getVersion().equals(version)).findFirst();
+                assertTrue(first.isPresent());
+                NotRegisteredVersion jdkToRegister = first.get();
+                sdk.install(jdkToRegister);
+            }
             List<NotRegisteredVersion> scan2 = JDKScanner.scan();
             assertEquals(scan.size() - 3, scan2.size());
         } finally {
+            logger.debug("cleaning up");
             for (String version : versions) {
                 sdk.uninstall("java", version);
             }
+            deleteSymbolicLinks(versions);
             for (Path dummyJDK : dummyJDKs) {
                 //noinspection ResultOfMethodCallIgnored
                 Files.walk(dummyJDK)
                         .sorted(Comparator.reverseOrder())
                         .map(Path::toFile)
                         .forEach(File::delete);
-
             }
 
+        }
+    }
+
+    private void deleteSymbolicLinks(String[] versions) throws IOException {
+        File[] registeredJavaVersions = new File(SDK.getSDK_MAN_DIR() + File.separator + "candidates" + File.separator + "java").listFiles();
+        // remove previously registered dummy versions
+        if (registeredJavaVersions != null) {
+            for (File registeredJavaVersion : registeredJavaVersions) {
+                for (String version : versions) {
+                    if ((registeredJavaVersion.getName()).equals(version + "-adpt")) {
+                        Files.delete(registeredJavaVersion.toPath());
+                    }
+                }
+            }
         }
     }
 
@@ -82,7 +101,7 @@ class JDKScannerTest {
         if (bin.toFile().mkdirs()) {
             Files.write(dummyJava, strings);
         } else {
-            System.out.println("failed" + bin.toFile());
+            logger.debug("failed" + bin.toFile());
         }
         //noinspection ResultOfMethodCallIgnored
         dummyJava.toFile().setExecutable(true);
