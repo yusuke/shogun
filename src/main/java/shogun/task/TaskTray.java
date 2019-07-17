@@ -376,6 +376,13 @@ public class TaskTray {
             });
         }
 
+        void installNativeImageCommand(Version version) {
+            execute(() -> {
+                GraalUtil.installNativeImageCommand(version);
+                refreshMenus();
+            });
+        }
+
         void install(Version version) {
             boolean isNotRegisteredJDK = version instanceof NotRegisteredVersion;
             String dialogTitle = isNotRegisteredJDK ? getMessage(Messages.confirmRegisterTitle, version.getCandidate(), version.getIdentifier()) :
@@ -482,6 +489,12 @@ public class TaskTray {
                 MenuItem revealInFinderMenu = new MenuItem(getMessage(Platform.isMac ? Messages.revealInFinder : Messages.showInExplorer));
                 revealInFinderMenu.addActionListener(e -> revealInFinder(version));
                 menu.add(revealInFinderMenu);
+
+                if (GraalUtil.isGraal(version) && !GraalUtil.isNativeImageCommandInstalled(version)) {
+                    MenuItem installNativeImage = new MenuItem(getMessage(Messages.installNativeImage));
+                    installNativeImage.addActionListener(e -> installNativeImageCommand(version));
+                    menu.add(installNativeImage);
+                }
             }
 
             if (version.isInstalled() || version.isLocallyInstalled()) {

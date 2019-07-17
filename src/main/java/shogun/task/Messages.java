@@ -24,5 +24,6 @@ enum Messages {
     offline,
     showInExplorer,
     unregister,
+    installNativeImage,
     updateAvailable
 }
