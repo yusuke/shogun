@@ -485,7 +485,7 @@ public class TaskTray {
             }
 
             if (version.isInstalled() || version.isLocallyInstalled()) {
-                MenuItem uninstallItem = new MenuItem(getMessage(Messages.uninstall));
+                MenuItem uninstallItem = new MenuItem(getMessage(version.isLocallyInstalled() ? Messages.unregister : Messages.uninstall));
                 uninstallItem.addActionListener(e -> uninstall(version));
                 menu.add(uninstallItem);
             }
