@@ -16,8 +16,9 @@ On macOS Mojave or later, you'll see a dialog from [Gatekeeper](https://support.
 Currently you can:
  - See the list of available Java distributions
  - Choose to make a specified distribution / version the default
- - Install or uninstall JDK
- - Reveal the specified JDK Home in Finder
+ - Install or uninstall JDK, or any SDKs available from [SDKMAN!](https://sdkman.io)
+ - Detect locally installed JDKs, register them with [SDKMAN!](https://sdkman.io)
+ - Reveal specified JDK Home in Finder
   from OS Task tray.
   
 ## How to Build 
