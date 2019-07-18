@@ -477,9 +477,11 @@ public class TaskTray {
                 menu.add(menuItem);
             }
             if (version.isInstalled() || version.isLocallyInstalled()) {
-                MenuItem openInTerminalMenu = new MenuItem(getMessage(Messages.openInTerminal, version.getIdentifier()));
-                openInTerminalMenu.addActionListener(e -> openInTerminal(version));
-                menu.add(openInTerminalMenu);
+                Platform.isMac(() -> {
+                    MenuItem openInTerminalMenu = new MenuItem(getMessage(Messages.openInTerminal, version.getIdentifier()));
+                    openInTerminalMenu.addActionListener(e -> openInTerminal(version));
+                    menu.add(openInTerminalMenu);
+                });
             }
             if (version.isDetected() || version.isInstalled() || version.isLocallyInstalled()) {
                 MenuItem copyPathMenu = new MenuItem(getMessage(Messages.copyPath));
