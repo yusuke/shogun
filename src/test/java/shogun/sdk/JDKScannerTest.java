@@ -1,6 +1,7 @@
 package shogun.sdk;
 
 import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import shogun.logging.LoggerFactory;
@@ -15,6 +16,20 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class JDKScannerTest {
     private final static Logger logger = LoggerFactory.getLogger();
+
+    @BeforeAll
+    static void before() throws IOException {
+        List<NotRegisteredVersion> test = JDKScanner.scan();
+        for (NotRegisteredVersion notRegisteredVersion : test) {
+            if (notRegisteredVersion.getPath().contains("Contents/Home")) {
+                //noinspection ResultOfMethodCallIgnored
+                Files.walk(Path.of(notRegisteredVersion.getPath()))
+                        .sorted(Comparator.reverseOrder())
+                        .map(Path::toFile)
+                        .forEach(File::delete);
+            }
+        }
+    }
 
     @Test
     void scan() throws IOException {
