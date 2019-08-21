@@ -57,7 +57,7 @@ public final class Platform {
         }
     }
 
-    static void isLinux(Runnable runnable) {
+    public static void isLinux(Runnable runnable) {
         if (platform == OS.LINUX) {
             try {
                 runnable.run();
