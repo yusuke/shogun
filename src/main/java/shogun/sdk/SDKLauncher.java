@@ -5,6 +5,7 @@ import shogun.logging.LoggerFactory;
 
 import java.io.*;
 import java.lang.ProcessBuilder.Redirect;
+import java.nio.file.Files;
 
 public class SDKLauncher {
     private final static Logger logger = LoggerFactory.getLogger();
@@ -35,14 +36,11 @@ public class SDKLauncher {
             printWriter.write("n\n");
             printWriter.flush();
             process.waitFor();
-            try (FileInputStream fis = new FileInputStream(tempFile)) {
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                fis.transferTo(baos);
 
-                String response = trimANSIEscapeCodes(baos.toString());
-                logger.debug("Response: {}", response);
-                return response;
-            }
+            byte[] responseBytes = Files.readAllBytes(tempFile.toPath());
+            String response = trimANSIEscapeCodes(new String(responseBytes));
+            logger.debug("Response: {}", response);
+            return response;
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         } finally {
