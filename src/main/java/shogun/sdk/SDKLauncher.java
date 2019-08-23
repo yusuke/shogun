@@ -16,8 +16,9 @@ public class SDKLauncher {
      * @return output
      */
     public static String exec(String... command) {
+        File tempFile = null;
         try {
-            File tempFile = File.createTempFile("sdk", "log");
+            tempFile = File.createTempFile("sdk", "log");
             logger.debug("Command to be executed: {}", (Object) command);
             String[] commands = new String[command.length + 2];
             commands[0] = getBash();
@@ -34,14 +35,23 @@ public class SDKLauncher {
             printWriter.write("n\n");
             printWriter.flush();
             process.waitFor();
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            new FileInputStream(tempFile).transferTo(baos);
-            logger.debug("Response:");
-            String response = trimANSIEscapeCodes(baos.toString());
-            logger.debug(response);
-            return response;
+            try (FileInputStream fis = new FileInputStream(tempFile)) {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                fis.transferTo(baos);
+
+                String response = trimANSIEscapeCodes(baos.toString());
+                logger.debug("Response: {}", response);
+                return response;
+            }
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
+        } finally {
+            if (tempFile != null && tempFile.exists()) {
+                if (!tempFile.delete()) {
+                    logger.warn("Failed to delete {} even though it exists, try deleteOnExit", tempFile);
+                    tempFile.deleteOnExit();
+                }
+            }
         }
     }
 
