@@ -28,6 +28,6 @@ public class JavaVersion extends Version {
 
     @Override
     public String toString() {
-        return isLocallyInstalled() ? identifier : vendor + " " + getVersion();
+        return getInstallationDir().startsWith(SDK.getSDK_MAN_DIR()) ? (vendor + " " + getVersion()) : identifier;
     }
 }

@@ -1,7 +1,6 @@
 package shogun.sdk;
 
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import shogun.logging.LoggerFactory;
@@ -17,20 +16,20 @@ import static org.junit.jupiter.api.Assertions.*;
 class JDKScannerTest {
     private final static Logger logger = LoggerFactory.getLogger();
 
-    @BeforeAll
-    static void before() throws IOException {
-        List<NotRegisteredVersion> test = JDKScanner.scan();
-        for (NotRegisteredVersion notRegisteredVersion : test) {
-            if (notRegisteredVersion.getPath().contains("Contents/Home")) {
-                //noinspection ResultOfMethodCallIgnored
-                Files.walk(Path.of(notRegisteredVersion.getPath()))
-                        .sorted(Comparator.reverseOrder())
-                        .map(Path::toFile)
-                        .forEach(File::delete);
-            }
-        }
-    }
-
+    //    @BeforeAll
+//    static void before() throws IOException {
+//        List<NotRegisteredVersion> test = JDKScanner.scan();
+//        for (NotRegisteredVersion notRegisteredVersion : test) {
+//            if (notRegisteredVersion.getPath().contains("Contents/Home")) {
+//                //noinspection ResultOfMethodCallIgnored
+//                Files.walk(Path.of(notRegisteredVersion.getPath()))
+//                        .sorted(Comparator.reverseOrder())
+//                        .map(Path::toFile)
+//                        .forEach(File::delete);
+//            }
+//        }
+//    }
+//
     @Test
     void scan() throws IOException {
         String vendor = "AdoptOpenJDK";
@@ -45,7 +44,7 @@ class JDKScannerTest {
                 new File(System.getProperty("user.home") + File.separator + "Downloads")};
         deleteSymbolicLinks(versions);
 
-        List<NotRegisteredVersion> before = JDKScanner.scan();
+        List<JavaVersion> before = JDKScanner.scan();
         assertNotNull(before);
         SDK sdk = new SDK();
         List<Path> dummyJDKs = new ArrayList<>();
@@ -57,20 +56,20 @@ class JDKScannerTest {
                 logger.debug("created:" + dummyJDK.toFile().getAbsolutePath());
             }
 
-            List<NotRegisteredVersion> scan = JDKScanner.scan();
+            List<JavaVersion> scan = JDKScanner.scan();
             assertEquals(before.size() + 3, scan.size());
 
             assertTrue(0 < scan.size());
-            for (NotRegisteredVersion notRegisteredVersion : scan) {
+            for (JavaVersion notRegisteredVersion : scan) {
                 logger.debug("found:" + notRegisteredVersion.getPath());
             }
             for (String version : versions) {
-                Optional<NotRegisteredVersion> first = scan.stream().filter(e -> e.getVersion().equals(version)).findFirst();
+                Optional<JavaVersion> first = scan.stream().filter(e -> e.getVersion().equals(version)).findFirst();
                 assertTrue(first.isPresent());
-                NotRegisteredVersion jdkToRegister = first.get();
+                JavaVersion jdkToRegister = first.get();
                 sdk.install(jdkToRegister);
             }
-            List<NotRegisteredVersion> scan2 = JDKScanner.scan();
+            List<JavaVersion> scan2 = JDKScanner.scan();
             assertEquals(scan.size() - 3, scan2.size());
         } finally {
             logger.debug("cleaning up");
@@ -144,7 +143,18 @@ class JDKScannerTest {
                     String v = "openjdk version \"11.0.3-BellSoft\" 2019-04-16\n" +
                             "LibericaJDK Runtime Environment (build 11.0.3-BellSoft+12)\n" +
                             "LibericaJDK 64-Bit Server VM (build 11.0.3-BellSoft+12, mixed mode)";
-                    assertEquals("11.0.3-librca", JDKScanner.stringToVersion(v, new File("dumy")).getIdentifier());
+                    NotRegisteredVersion liberica = JDKScanner.stringToVersion(v, new File("dumy"));
+                    assertEquals("11.0.3-librca", liberica.getIdentifier());
+                    assertEquals("BellSoft", liberica.getVendor());
+                },
+                () -> {
+                    // Liberica
+                    String v = "openjdk version \"1.8.0_222\"\n" +
+                            "OpenJDK Runtime Environment (build 1.8.0_222-BellSoft-b11)\n" +
+                            "OpenJDK 64-Bit Server VM (build 25.222-b11, mixed mode)";
+                    NotRegisteredVersion liberica = JDKScanner.stringToVersion(v, new File("dumy"));
+                    assertEquals("1.8.0_222-librca", liberica.getIdentifier());
+                    assertEquals("BellSoft", liberica.getVendor());
                 },
                 () -> {
                     // AdoptOpenJDK
@@ -200,7 +210,14 @@ class JDKScannerTest {
                     String v = "openjdk version \"14-ea\" 2020-03-17\n" +
                             "OpenJDK Runtime Environment (build 14-ea+5-129)\n" +
                             "OpenJDK 64-Bit Server VM (build 14-ea+5-129, mixed mode, sharing)";
-                    assertEquals("14-open", JDKScanner.stringToVersion(v, new File("dumy")).getIdentifier());
+                    assertEquals("14.ea.5-open", JDKScanner.stringToVersion(v, new File("dumy")).getIdentifier());
+                },
+                () -> {
+                    // OpenJDK 13-ea+30
+                    String v = "openjdk version \"13-ea\" 2019-09-17\n" +
+                            "OpenJDK Runtime Environment (build 13-ea+30)\n" +
+                            "OpenJDK 64-Bit Server VM (build 13-ea+30, mixed mode, sharing)";
+                    assertEquals("13.ea.30-open", JDKScanner.stringToVersion(v, new File("dumy")).getIdentifier());
                 }
         );
 

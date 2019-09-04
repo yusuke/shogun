@@ -52,8 +52,9 @@ public class Version {
     }
 
     public boolean isLocallyInstalled() {
-        return getInstallationDir().toFile().exists() && Files.isSymbolicLink(getInstallationDir());
+        return !isDetected() && getInstallationDir().toFile().exists() && Files.isSymbolicLink(getInstallationDir());
     }
+
 
     /**
      * returns true if the JDK is detected by Shogun, not buy SDKMAN!
@@ -61,7 +62,7 @@ public class Version {
      * @return true if the JDK is detected by Shogun, not buy SDKMAN!
      */
     public boolean isDetected() {
-        return false;
+        return getStatus().equals("not registered");
     }
 
     boolean isArchived() {
@@ -74,7 +75,7 @@ public class Version {
     }
 
     static String toSizeStr(long length) {
-        double kiloBytes = length / 1000;
+        double kiloBytes = length / 1000d;
         DecimalFormat decimalFormat = new DecimalFormat("###,##0.0");
         if (kiloBytes < 1000) {
             return decimalFormat.format(kiloBytes) + " KB";
@@ -94,7 +95,7 @@ public class Version {
     }
 
     @NotNull
-    private Path getInstallationDir() {
+    Path getInstallationDir() {
         return Paths.get(SDK.getSDK_MAN_DIR() + File.separator + "candidates" + File.separator + candidate + File.separator + getIdentifier());
     }
 
@@ -119,7 +120,7 @@ public class Version {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof Version)) return false;
         Version version1 = (Version) o;
         return candidate.equals(version1.candidate) &&
                 version.equals(version1.version);

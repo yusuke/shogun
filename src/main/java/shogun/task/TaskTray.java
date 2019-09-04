@@ -23,6 +23,7 @@ public class TaskTray {
     private final ResourceBundle bundle = ResourceBundle.getBundle("message", Locale.getDefault());
 
     private final SDK sdk = new SDK();
+    private final CachedSDK cachedSDK = new CachedSDK();
     private SystemTray tray;
     private TrayIcon icon;
     // for the test purpose, set true to skip confirmation dialogs
@@ -245,7 +246,7 @@ public class TaskTray {
         if (!sdk.isOffline()) {
             logger.debug("Offline mode.");
             // list available candidates
-            sdk.listCandidates().stream()
+            cachedSDK.listCandidates().stream()
                     .filter(e -> !installedCandidates.contains(e))
                     .forEach(e -> {
                         logger.debug("Available candidate: {}", e);
@@ -305,13 +306,13 @@ public class TaskTray {
 
         void refreshMenus() {
             logger.debug("Refreshing menus for: {}", candidate);
-            this.versions = sdk.list(candidate);
+            this.versions = cachedSDK.list(candidate);
             List<Version> sortedVersions = new ArrayList<>();
             versions.stream().filter(e -> e.isInstalled() || e.isLocallyInstalled()).forEach(sortedVersions::add);
             if ("java".equals(candidate)) {
                 Platform.isMac(() -> {
                     logger.debug("Scanning JDK(s) not managed by SDKMAN!");
-                    List<NotRegisteredVersion> jdkList = JDKScanner.scan();
+                    List<JavaVersion> jdkList = JDKScanner.scan();
                     logger.debug("Found {} JDK(s)", jdkList.size());
                     sortedVersions.addAll(jdkList);
                 });

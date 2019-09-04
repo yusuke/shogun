@@ -6,7 +6,7 @@ import shogun.logging.LoggerFactory;
 public final class Platform {
     private final static Logger logger = LoggerFactory.getLogger();
 
-    private static final OS platform;
+    public static final OS platform;
 
     enum OS {
         WINDOWS, LINUX, MACOS
