@@ -131,7 +131,12 @@ public class CachedSDK {
 
         for (String versionStr : candidatesInPref.split(",")) {
             if (versions.stream().filter(e -> e.getIdentifier().equals(versionStr)).findFirst().isEmpty()) {
-                versions.add(new Version(candidate, false, versionStr, ""));
+                if (candidate.equals("java")) {
+                    versions.add(new JavaVersion(versionStr, ""));
+
+                } else {
+                    versions.add(new Version(candidate, false, versionStr, ""));
+                }
             }
         }
         return versions;
