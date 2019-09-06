@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -219,10 +220,25 @@ public class SDK {
     }
 
     public void install(Version version) {
+        install(version, null);
+    }
+
+    public void install(Version version, Consumer<String> progressConsumer) {
         if (version instanceof NotRegisteredVersion) {
             installLocal(version.getCandidate(), version.getIdentifier(), version.getPath());
         } else {
-            runSDK(String.format("install %s %s", version.getCandidate(), version.getIdentifier()));
+            StringBuilder progress = new StringBuilder(6); // Max is 100.0%
+            runSDK(String.format("install %s %s", version.getCandidate(), version.getIdentifier()),
+                    progressConsumer == null ? ch -> {} : ch -> {
+                if (Character.isDigit(ch) || ch == '.') {
+                    progress.append(ch);
+                    return;
+                } else if (ch == '%') {
+                    progress.append(ch);
+                    progressConsumer.accept(progress.toString());
+                }
+                progress.setLength(0);
+            });
         }
     }
 
@@ -284,6 +300,10 @@ public class SDK {
 
     public static String runSDK(String command) {
         return SDKLauncher.exec(String.format("source %s/bin/sdkman-init.sh;sdk %s", getSDK_MAN_DIR(), command)).trim();
+    }
+
+    public static void runSDK(String command, Consumer<Character> consumer) {
+        SDKLauncher.exec(consumer, String.format("source %s/bin/sdkman-init.sh;sdk %s", getSDK_MAN_DIR(), command));
     }
 
     static List<String> listLocallyInstalledPaths() {
