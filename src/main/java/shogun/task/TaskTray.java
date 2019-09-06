@@ -573,6 +573,13 @@ public class TaskTray {
                 logger.error("Failed to open command prompt.", e);
             }
         });
+        Platform.isLinux(() -> {
+            try {
+                Runtime.getRuntime().exec(new String[]{"xdg-open", path});
+            } catch (IOException e) {
+                logger.error("Failed to open {}", path, e);
+            }
+        });
     }
 
     private static String withCandidate(Version version, String label) {
