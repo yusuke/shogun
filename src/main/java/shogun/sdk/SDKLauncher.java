@@ -5,6 +5,7 @@ import shogun.logging.LoggerFactory;
 
 import java.io.*;
 import java.lang.ProcessBuilder.Redirect;
+import java.util.function.Consumer;
 import java.nio.file.Files;
 
 public class SDKLauncher {
@@ -41,6 +42,47 @@ public class SDKLauncher {
             String response = trimANSIEscapeCodes(new String(responseBytes));
             logger.debug("Response: {}", response);
             return response;
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException(e);
+        } finally {
+            if (tempFile != null && tempFile.exists()) {
+                if (!tempFile.delete()) {
+                    logger.warn("Failed to delete {} even though it exists, try deleteOnExit", tempFile);
+                    tempFile.deleteOnExit();
+                }
+            }
+        }
+    }
+
+    public static void exec(Consumer<Character> charConsumer, String... command) {
+        File tempFile = null;
+        try {
+            tempFile = File.createTempFile("sdk", "log");
+            logger.debug("Command to be executed: {}", (Object) command);
+            String[] commands = new String[command.length + 2];
+            commands[0] = getBash();
+            commands[1] = "-c";
+            System.arraycopy(command, 0, commands, 2, command.length);
+            ProcessBuilder pb = new ProcessBuilder(commands)
+                    .directory(new File("."))
+                    .redirectErrorStream(true)
+                    .redirectOutput(Redirect.to(tempFile));
+            Process process = pb.start();
+            OutputStream outputStream = process.getOutputStream();
+            PrintWriter printWriter = new PrintWriter(outputStream);
+            // say yes
+            printWriter.write("n\n");
+            printWriter.flush();
+            try (InputStreamReader isr = new InputStreamReader(new FileInputStream(tempFile))) {
+                while (process.isAlive()) {
+                    int ch = isr.read();
+                    if (ch < 0) {
+                        Thread.sleep(10);
+                        continue;
+                    }
+                    charConsumer.accept((char) ch);
+                }
+            }
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         } finally {

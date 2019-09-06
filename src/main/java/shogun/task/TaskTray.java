@@ -15,6 +15,8 @@ import java.util.List;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 import static javax.swing.JOptionPane.QUESTION_MESSAGE;
 
@@ -338,7 +340,7 @@ public class TaskTray {
         void setRootMenuLabel(Menu menu) {
             // add version string in use
             String label = versions.stream()
-                    .filter(Version::isUse).map(e -> candidate + " > " + e.toString())
+                    .filter(Version::isUse).map(e -> withCandidate(e, e.toString()))
                     .findFirst().orElse(candidate);
             logger.debug("setting root label to {}", label);
             invokeLater(() -> menu.setLabel(label));
@@ -383,7 +385,7 @@ public class TaskTray {
             });
         }
 
-        void install(Version version) {
+        void install(Version version, Consumer<String> progressConsumer, Runnable onFinished) {
             boolean isNotRegisteredJDK = version instanceof NotRegisteredVersion;
             String dialogTitle = isNotRegisteredJDK ? getMessage(Messages.confirmRegisterTitle, version.getCandidate(), version.getIdentifier()) :
                     getMessage(Messages.confirmInstallTitle, version.getCandidate(), version.toString());
@@ -397,7 +399,8 @@ public class TaskTray {
                 execute(() -> {
                     logger.debug("Install: {}", version);
                     var wasInstalled = isInstalled();
-                    sdk.install(version);
+                    sdk.install(version, progressConsumer);
+                    onFinished.run();
                     refreshMenus();
                     if (!wasInstalled) {
                         // this candidate wasn't installed. move to installed candidates list
@@ -507,7 +510,24 @@ public class TaskTray {
 
             if (!version.isInstalled() && !version.isLocallyInstalled()) {
                 MenuItem menuItem = new MenuItem(getMessage(version.isDetected() ? Messages.register : Messages.install));
-                menuItem.addActionListener(e -> install(version));
+                menuItem.addActionListener(e -> {
+                    menuItem.setEnabled(false);
+                    MenuItem installingLabel = new MenuItem();
+                    installingLabel.setEnabled(false);
+                    popup.add(installingLabel);
+
+                    String waitingForStartLabel = toInstallingLabel(version, "Waiting for start...");
+                    menu.setLabel(withUsePrefix(version, waitingForStartLabel));
+                    installingLabel.setLabel(withCandidate(version, waitingForStartLabel));
+                    install(version, progress -> {
+                        logger.info("Installing {}... Progress: {}", version, progress);
+                        invokeLater(() -> {
+                            String progressLabel = toInstallingLabel(version, progress);
+                            menu.setLabel(withUsePrefix(version, progressLabel));
+                            installingLabel.setLabel(withCandidate(version, progressLabel));
+                        });
+                    }, () -> invokeLater(() -> popup.remove(installingLabel)));
+                });
                 menu.add(menuItem);
             }
         }
@@ -562,9 +582,16 @@ public class TaskTray {
         });
     }
 
+    private static String withCandidate(Version version, String label) {
+        return version.getCandidate() + " > " + label;
+    }
+
+    private static String withUsePrefix(Version version, String label) {
+        return (version.isUse() ? ">" : "  ") + label;
+    }
+
     private static String toLabel(Version version) {
-        String label = version.isUse() ? ">" : "  ";
-        label += version.toString();
+        String label = withUsePrefix(version, version.toString());
         if (version.isLocallyInstalled()) {
             label += " (local only)";
         } else if (version.isInstalled()) {
@@ -573,6 +600,10 @@ public class TaskTray {
             label += " (detected)";
         }
         return label;
+    }
+
+    private String toInstallingLabel(Version version, String progress) {
+        return version.toString() + " (installing, " + progress + ')';
     }
 
     String getMessage(Messages message, String... values) {
