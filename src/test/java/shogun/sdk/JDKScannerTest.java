@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import shogun.logging.LoggerFactory;
 
 import java.io.File;
+import java.nio.file.Paths;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -90,7 +91,7 @@ class JDKScannerTest {
     }
 
     private void deleteSymbolicLinks(String[] versions) throws IOException {
-        File[] registeredJavaVersions = new File(SDK.getSDK_MAN_DIR() + File.separator + "candidates" + File.separator + "java").listFiles();
+        File[] registeredJavaVersions = Paths.get(SDK.getSDK_MAN_DIR(), "candidates", "java").toFile().listFiles();
         // remove previously registered dummy versions
         if (registeredJavaVersions != null) {
             for (File registeredJavaVersion : registeredJavaVersions) {
