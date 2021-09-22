@@ -32,7 +32,7 @@ public class SDK {
     }
 
     public boolean isInstalled() {
-        return Files.exists(Paths.get(getSDK_MAN_DIR() + File.separator + "bin" + File.separator + "sdkman-init.sh"));
+        return Files.exists(Paths.get(getSDK_MAN_DIR(), "bin", "sdkman-init.sh"));
     }
 
     public String install() {
@@ -55,7 +55,7 @@ public class SDK {
 
     @NotNull
     private File getArchiveDir() {
-        return new File(SDK.getSDK_MAN_DIR() + File.separator + "archives");
+        return Paths.get(SDK.getSDK_MAN_DIR(), "archives").toFile();
     }
 
     boolean isArchiveExists() {
@@ -280,7 +280,7 @@ public class SDK {
             throw new IllegalStateException("SDKMAN! not installed!");
         }
         var candidates = new ArrayList<String>();
-        File[] candidateDirs = new File(getSDK_MAN_DIR() + File.separator + "candidates").listFiles();
+        File[] candidateDirs = Paths.get(getSDK_MAN_DIR(), "candidates").toFile().listFiles();
         if (candidateDirs != null) {
             for (File file : candidateDirs) {
                 if (file.isDirectory()) {
@@ -307,7 +307,7 @@ public class SDK {
     }
 
     static List<String> listLocallyInstalledPaths() {
-        File file = new File(SDK.getSDK_MAN_DIR() + File.separator + "candidates" + File.separator + "java");
+        File file = Paths.get(SDK.getSDK_MAN_DIR(), "candidates", "java").toFile();
         List<String> list = new ArrayList<>();
         if (file.exists() && file.isDirectory()) {
             File[] files = file.listFiles();

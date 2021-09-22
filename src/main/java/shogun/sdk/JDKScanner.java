@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -76,11 +77,11 @@ public class JDKScanner {
             if (files != null) {
                 for (File candidate : files) {
                     if (!Files.isSymbolicLink(candidate.toPath())) {
-                        File javaHome = new File(candidate.getAbsolutePath() + File.separator + "Contents" + File.separator + "Home");
+                        File javaHome = Paths.get(candidate.getAbsolutePath(), "Contents", "Home").toFile();
                         if (javaHome.exists() && javaHome.isDirectory()) {
                             result.add(javaHome);
                         } else if (candidate.exists() && candidate.isDirectory()) {
-                            File javaCommand = new File(candidate.getAbsolutePath() + File.separator + "bin" + File.separator + "java");
+                            File javaCommand = Paths.get(candidate.getAbsolutePath(), "bin", "java").toFile();
                             if (javaCommand.exists() && javaCommand.isFile()) {
                                 result.add(javaHome);
                             }

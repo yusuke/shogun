@@ -29,7 +29,7 @@ class SDKTest {
 
         SDK sdk = new SDK();
         if (sdk.isInstalled()) {
-            assertEquals(new File(System.getProperty("user.home") + File.separator + ".sdkman").compareTo(new File(SDK.getSDK_MAN_DIR())), 0);
+            assertEquals(Paths.get(System.getProperty("user.home"),".sdkman").toFile().compareTo(new File(SDK.getSDK_MAN_DIR())), 0);
         }
     }
 
@@ -354,7 +354,7 @@ class SDKTest {
         assumeTrue(sdk.isInstalled());
 
         // version is stored in ~/.sdkman/var/version
-        List<String> lines = Files.readAllLines(Paths.get(SDK.getSDK_MAN_DIR() + File.separator + "var" + File.separator + "version"));
+        List<String> lines = Files.readAllLines(Paths.get(SDK.getSDK_MAN_DIR(), "var", "version"));
         // X.Y.Z+nnn
         String versionFullString = lines.get(0);
 

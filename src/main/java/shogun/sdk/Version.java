@@ -90,17 +90,17 @@ public class Version {
 
     @NotNull
     private File getArchiveFile() {
-        return new File(SDK.getSDK_MAN_DIR() + File.separator + "archives" + File.separator + candidate + "-" + getIdentifier() + ".zip");
+        return Paths.get(SDK.getSDK_MAN_DIR(), "archives", candidate + "-" + getIdentifier() + ".zip").toFile();
     }
 
     @NotNull
     private Path getInstallationDir() {
-        return Paths.get(SDK.getSDK_MAN_DIR() + File.separator + "candidates" + File.separator + candidate + File.separator + getIdentifier());
+        return Paths.get(SDK.getSDK_MAN_DIR(), "candidates", candidate, getIdentifier());
     }
 
     @NotNull
     private Path getCurrentDir() {
-        return Paths.get(SDK.getSDK_MAN_DIR() + File.separator + "candidates" + File.separator + candidate + File.separator + "current");
+        return Paths.get(SDK.getSDK_MAN_DIR(), "candidates", candidate, "current");
     }
 
     @SuppressWarnings("unused")
@@ -136,7 +136,7 @@ public class Version {
     }
 
     public String getPath() {
-        return new File(SDK.getSDK_MAN_DIR() + File.separator + "candidates" + File.separator + candidate + File.separator + getIdentifier()).getAbsolutePath();
+        return Paths.get(SDK.getSDK_MAN_DIR(), "candidates", candidate, getIdentifier()).toFile().getAbsolutePath();
     }
 
     public String getIdentifier() {

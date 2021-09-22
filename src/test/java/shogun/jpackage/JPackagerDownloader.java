@@ -53,15 +53,15 @@ class JPackagerDownloader {
                     conn.disconnect();
                 }
             }
-            unZip(packagerRoot, Paths.get("jdk.packager" + File.separator + fileName));
+            unZip(packagerRoot, Paths.get("jdk.packager", fileName));
             Path bin = packagerRoot.resolve("jpackager" + (isWindows ? ".exe" : ""));
             //noinspection ResultOfMethodCallIgnored
             bin.toFile().setExecutable(true);
             if (isWindows) {
                 // jpackager.exe needs to be located in %JAVA_HOME%\bin
-                Files.move(bin, Path.of(System.getProperty("java.home") + File.separator + "bin" + File.separator + "jpackager.exe"));
+                Files.move(bin, Path.of(System.getProperty("java.home"), "bin", "jpackager.exe"));
                 // jdk.packager.jar needs to be located in %JAVA_HOME%\bin
-                Files.move(packagerRoot.resolve("jdk.packager.jar"), Path.of(System.getProperty("java.home") + File.separator + "bin" + File.separator + "jdk.packager.jar"));
+                Files.move(packagerRoot.resolve("jdk.packager.jar"), Path.of(System.getProperty("java.home"), "bin", "jdk.packager.jar"));
             }
         }
     }
