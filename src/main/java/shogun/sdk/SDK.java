@@ -330,7 +330,7 @@ public class SDK {
 
     static String getSDK_MAN_DIR() {
         if (sdkManDir == null) {
-            sdkManDir = SDKLauncher.exec("source ~/.bash_profile>/dev/null;echo $SDKMAN_DIR").trim();
+            sdkManDir = SDKLauncher.exec("source ~/.bash_profile>/dev/null 2>&1;echo $SDKMAN_DIR").trim();
             var matcher = Pattern.compile("^/([a-zA-Z])(/.*)$").matcher(sdkManDir);
             if (matcher.matches()) {
                 sdkManDir = matcher.replaceFirst("$1:$2");
